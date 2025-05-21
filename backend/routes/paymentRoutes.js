@@ -1,0 +1,31 @@
+const express = require('express');
+const {
+  getPayments,
+  getPaymentById,
+  createPayment,
+  updatePayment,
+  getPaymentsByHousehold,
+  getPaymentsByFee
+} = require('../controllers/paymentController');
+const { protect, authorize } = require('../middleware/authMiddleware');
+
+const router = express.Router();
+
+// All routes are protected
+router.use(protect);
+
+router.route('/')
+  .get(getPayments)
+  .post(authorize(['admin', 'accountant']), createPayment);
+
+router.route('/household/:id')
+  .get(getPaymentsByHousehold);
+
+router.route('/fee/:id')
+  .get(getPaymentsByFee);
+
+router.route('/:id')
+  .get(getPaymentById)
+  .put(authorize(['admin', 'accountant']), updatePayment);
+
+module.exports = router; 
