@@ -16,6 +16,7 @@ This guide will help you deploy the BlueMoon Apartment Management application to
 2. Create a database named `bluemoon_apartment`
 3. Add a database user with read/write permissions
 4. Get your MongoDB connection string
+5. **IMPORTANT:** Make sure to add "0.0.0.0/0" to your IP access list in MongoDB Atlas settings to allow connections from Vercel
 
 ### 2. Deploy to Vercel
 
@@ -66,6 +67,36 @@ This guide will help you deploy the BlueMoon Apartment Management application to
 
 ## Troubleshooting
 
+### 404 Errors
+
+If you're getting 404 errors after deployment:
+
+1. **Check Vercel Logs**:
+   - Go to your project in the Vercel dashboard
+   - Click on "Deployments" and select your latest deployment
+   - Click "Functions" to check for backend errors
+   - Click "Build" to check for frontend build errors
+
+2. **Verify Environment Variables**:
+   - Make sure all required environment variables are set correctly
+   - Check that MONGO_URI is correct and accessible
+
+3. **Redeploy with Clean Cache**:
+   - Try running `vercel --prod --force` to redeploy with a clean cache
+
+4. **Check API Access**:
+   - Try accessing `/api` endpoint directly to see if backend is working
+   - Example: `https://your-project.vercel.app/api`
+
+5. **Check MongoDB Connection**:
+   - Ensure your MongoDB Atlas IP access list includes "0.0.0.0/0"
+   - Test your MongoDB connection string locally before deploying
+
+6. **Common Issues**:
+   - Missing `/` in API routes in frontend code
+   - Incorrect paths in `vercel.json` file
+   - Missing or incomplete build process
+
 - If you encounter connection issues with MongoDB, verify your network allowlist settings in MongoDB Atlas
 - For API errors, check Vercel logs for detailed error messages
 - If the frontend is loading but API calls fail, verify that environment variables are correctly set
@@ -74,4 +105,6 @@ This guide will help you deploy the BlueMoon Apartment Management application to
 
 - Vercel automatically handles HTTPS certificates
 - The application is serverless, so some long-running operations might need optimization
-- Vercel has usage limits on the free tier, check their documentation for details 
+- Vercel has usage limits on the free tier, check their documentation for details
+- For full-stack applications, Vercel converts your Express API to serverless functions
+- MongoDB connections might have higher latency in serverless environments 

@@ -11,10 +11,13 @@
     "data:users": "node backend/seeders/createTestUsers.js",
     "data:import": "node backend/seeders/createTestData.js",
     "data:seed": "npm run data:users && npm run data:import",
-    "build": "cd frontend && npm install && npm run build"
+    "build": "npm install --prefix frontend && npm run build --prefix frontend"
   },
   "devDependencies": {
     "concurrently": "^7.6.0",
     "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 } 
