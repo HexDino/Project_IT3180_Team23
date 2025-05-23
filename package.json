@@ -10,7 +10,8 @@
     "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
     "data:users": "node backend/seeders/createTestUsers.js",
     "data:import": "node backend/seeders/createTestData.js",
-    "data:seed": "npm run data:users && npm run data:import"
+    "data:seed": "npm run data:users && npm run data:import",
+    "build": "cd frontend && npm install && npm run build"
   },
   "devDependencies": {
     "concurrently": "^7.6.0",
