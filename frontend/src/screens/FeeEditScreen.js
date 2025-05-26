@@ -69,7 +69,7 @@ const FeeEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load fee details'
+          : 'Không thể tải thông tin phí'
       );
       setLoading(false);
     }
@@ -78,9 +78,9 @@ const FeeEditScreen = () => {
   const validateForm = () => {
     const errors = {};
     
-    if (!feeCode) errors.feeCode = 'Fee code is required';
-    if (!name) errors.name = 'Fee name is required';
-    if (!amount || amount <= 0) errors.amount = 'Amount must be greater than 0';
+    if (!feeCode) errors.feeCode = 'Mã phí là bắt buộc';
+    if (!name) errors.name = 'Tên phí là bắt buộc';
+    if (!amount || amount <= 0) errors.amount = 'Số tiền phải lớn hơn 0';
     
     setValidationErrors(errors);
     
@@ -129,7 +129,7 @@ const FeeEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : `Failed to ${isEditMode ? 'update' : 'create'} fee`
+          : `Không thể ${isEditMode ? 'cập nhật' : 'tạo'} phí`
       );
     } finally {
       setLoading(false);
@@ -139,22 +139,22 @@ const FeeEditScreen = () => {
   return (
     <>
       <Link to='/fees' className='btn btn-light my-3'>
-        <i className="fas fa-arrow-left"></i> Back to Fees
+        <i className="fas fa-arrow-left"></i> Quay lại Phí
       </Link>
       
       <FormContainer>
-        <h1>{isEditMode ? 'Edit Fee' : 'Create Fee'}</h1>
+        <h1>{isEditMode ? 'Chỉnh Sửa Phí' : 'Tạo Phí Mới'}</h1>
         
         {error && <Message variant='danger'>{error}</Message>}
-        {success && <Message variant='success'>{isEditMode ? 'Fee updated' : 'Fee created'}</Message>}
+        {success && <Message variant='success'>{isEditMode ? 'Phí đã được cập nhật' : 'Phí đã được tạo'}</Message>}
         {loading && <Loader />}
         
         <Form onSubmit={submitHandler}>
           <Form.Group controlId='feeCode' className='mb-3'>
-            <Form.Label>Fee Code</Form.Label>
+            <Form.Label>Mã Phí</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter fee code'
+              placeholder='Nhập mã phí'
               value={feeCode}
               onChange={(e) => setFeeCode(e.target.value)}
               isInvalid={!!validationErrors.feeCode}
@@ -166,10 +166,10 @@ const FeeEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='name' className='mb-3'>
-            <Form.Label>Fee Name</Form.Label>
+            <Form.Label>Tên Phí</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter fee name'
+              placeholder='Nhập tên phí'
               value={name}
               onChange={(e) => setName(e.target.value)}
               isInvalid={!!validationErrors.name}
@@ -181,10 +181,10 @@ const FeeEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='amount' className='mb-3'>
-            <Form.Label>Amount</Form.Label>
+            <Form.Label>Số Tiền</Form.Label>
             <Form.Control
               type='number'
-              placeholder='Enter amount'
+              placeholder='Nhập số tiền'
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               isInvalid={!!validationErrors.amount}
@@ -198,25 +198,31 @@ const FeeEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='feeType' className='mb-3'>
-            <Form.Label>Fee Type</Form.Label>
+            <Form.Label>Loại Phí</Form.Label>
             <Form.Select
               value={feeType}
               onChange={(e) => setFeeType(e.target.value)}
             >
-              <option value='mandatory'>Mandatory</option>
-              <option value='voluntary'>Voluntary</option>
-              <option value='contribution'>Contribution</option>
-              <option value='parking'>Parking</option>
-              <option value='utilities'>Utilities</option>
+              <option value='mandatory'>Bắt buộc</option>
+              <option value='service'>Dịch vụ</option>
+              <option value='maintenance'>Bảo trì</option>
+              <option value='water'>Nước</option>
+              <option value='electricity'>Điện</option>
+              <option value='parking'>Đỗ xe</option>
+              <option value='internet'>Internet</option>
+              <option value='security'>An ninh</option>
+              <option value='cleaning'>Vệ sinh</option>
+              <option value='contribution'>Đóng góp</option>
+              <option value='other'>Khác</option>
             </Form.Select>
           </Form.Group>
           
           <Form.Group controlId='description' className='mb-3'>
-            <Form.Label>Description</Form.Label>
+            <Form.Label>Mô Tả</Form.Label>
             <Form.Control
               as='textarea'
               rows={3}
-              placeholder='Enter description (optional)'
+              placeholder='Nhập mô tả (không bắt buộc)'
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -225,7 +231,7 @@ const FeeEditScreen = () => {
           <Row>
             <Col md={6}>
               <Form.Group controlId='startDate' className='mb-3'>
-                <Form.Label>Start Date</Form.Label>
+                <Form.Label>Ngày Bắt Đầu</Form.Label>
                 <Form.Control
                   type='date'
                   value={startDate}
@@ -236,7 +242,7 @@ const FeeEditScreen = () => {
             
             <Col md={6}>
               <Form.Group controlId='endDate' className='mb-3'>
-                <Form.Label>End Date</Form.Label>
+                <Form.Label>Ngày Kết Thúc</Form.Label>
                 <Form.Control
                   type='date'
                   value={endDate}
@@ -250,7 +256,7 @@ const FeeEditScreen = () => {
             <Form.Group controlId='active' className='mb-3'>
               <Form.Check
                 type='checkbox'
-                label='Active'
+                label='Hoạt động'
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
               />
@@ -258,7 +264,7 @@ const FeeEditScreen = () => {
           )}
           
           <Button type='submit' variant='primary' className='mt-3'>
-            {isEditMode ? 'Update' : 'Create'}
+            {isEditMode ? 'Cập Nhật' : 'Tạo Mới'}
           </Button>
         </Form>
       </FormContainer>

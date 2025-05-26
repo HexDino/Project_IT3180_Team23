@@ -25,9 +25,9 @@ const ResidentEditScreen = () => {
   const [idCardDate, setIdCardDate] = useState('');
   const [idCardPlace, setIdCardPlace] = useState('');
   const [placeOfBirth, setPlaceOfBirth] = useState('');
-  const [nationality, setNationality] = useState('Vietnamese');
-  const [ethnicity, setEthnicity] = useState('');
-  const [religion, setReligion] = useState('');
+  const [nationality, setNationality] = useState('Việt Nam');
+  const [ethnicity, setEthnicity] = useState('Kinh');
+  const [religion, setReligion] = useState('Không');
   const [occupation, setOccupation] = useState('');
   const [workplace, setWorkplace] = useState('');
   const [phone, setPhone] = useState('');
@@ -63,7 +63,7 @@ const ResidentEditScreen = () => {
       const { data } = await axios.get('/api/households', config);
       setHouseholds(data.filter(h => h.active));
     } catch (error) {
-      console.error('Error fetching households:', error);
+      console.error('Lỗi khi tải danh sách hộ gia đình:', error);
     }
   };
   
@@ -96,9 +96,9 @@ const ResidentEditScreen = () => {
       
       setIdCardPlace(data.idCardPlace || '');
       setPlaceOfBirth(data.placeOfBirth || '');
-      setNationality(data.nationality || 'Vietnamese');
-      setEthnicity(data.ethnicity || '');
-      setReligion(data.religion || '');
+      setNationality(data.nationality || 'Việt Nam');
+      setEthnicity(data.ethnicity || 'Kinh');
+      setReligion(data.religion || 'Không');
       setOccupation(data.occupation || '');
       setWorkplace(data.workplace || '');
       setPhone(data.phone || '');
@@ -111,7 +111,7 @@ const ResidentEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load resident details'
+          : 'Không thể tải thông tin cư dân'
       );
       setLoading(false);
     }
@@ -120,14 +120,15 @@ const ResidentEditScreen = () => {
   const validateForm = () => {
     const errors = {};
     
-    if (!fullName) errors.fullName = 'Full name is required';
+    if (!fullName) errors.fullName = 'Họ tên là bắt buộc';
+    if (!gender) errors.gender = 'Giới tính là bắt buộc';
     
     if (idCard && !/^\d+$/.test(idCard)) {
-      errors.idCard = 'ID card must contain only numbers';
+      errors.idCard = 'CMND/CCCD chỉ được chứa số';
     }
     
     if (phone && !/^\d+$/.test(phone)) {
-      errors.phone = 'Phone must contain only numbers';
+      errors.phone = 'Số điện thoại chỉ được chứa số';
     }
     
     setValidationErrors(errors);
@@ -185,7 +186,7 @@ const ResidentEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : `Failed to ${isEditMode ? 'update' : 'create'} resident`
+          : `Không thể ${isEditMode ? 'cập nhật' : 'tạo'} cư dân`
       );
     } finally {
       setLoading(false);
@@ -195,22 +196,26 @@ const ResidentEditScreen = () => {
   return (
     <>
       <Link to='/residents' className='btn btn-light my-3'>
-        <i className="fas fa-arrow-left"></i> Back to Residents
+        <i className="fas fa-arrow-left"></i> Quay lại Danh sách Cư dân
       </Link>
       
       <FormContainer>
-        <h1>{isEditMode ? 'Edit Resident' : 'Create Resident'}</h1>
+        <h1>{isEditMode ? 'Chỉnh Sửa Cư Dân' : 'Thêm Cư Dân Mới'}</h1>
         
         {error && <Message variant='danger'>{error}</Message>}
-        {success && <Message variant='success'>{isEditMode ? 'Resident updated' : 'Resident created'}</Message>}
+        {success && (
+          <Message variant='success'>
+            {isEditMode ? 'Cư dân đã được cập nhật' : 'Cư dân đã được tạo thành công'}
+          </Message>
+        )}
         {loading && <Loader />}
         
         <Form onSubmit={submitHandler}>
           <Form.Group controlId='fullName' className='mb-3'>
-            <Form.Label>Full Name</Form.Label>
+            <Form.Label>Họ và Tên</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter full name'
+              placeholder='Nhập họ và tên'
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               isInvalid={!!validationErrors.fullName}
@@ -224,7 +229,7 @@ const ResidentEditScreen = () => {
           <Row>
             <Col md={6}>
               <Form.Group controlId='dateOfBirth' className='mb-3'>
-                <Form.Label>Date of Birth</Form.Label>
+                <Form.Label>Ngày Sinh</Form.Label>
                 <Form.Control
                   type='date'
                   value={dateOfBirth}
@@ -235,40 +240,43 @@ const ResidentEditScreen = () => {
             
             <Col md={6}>
               <Form.Group controlId='gender' className='mb-3'>
-                <Form.Label>Gender</Form.Label>
+                <Form.Label>Giới Tính</Form.Label>
                 <Form.Select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
+                  isInvalid={!!validationErrors.gender}
+                  required
                 >
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
+                  <option value=''>Chọn giới tính</option>
+                  <option value='male'>Nam</option>
+                  <option value='female'>Nữ</option>
+                  <option value='other'>Khác</option>
                 </Form.Select>
+                <Form.Control.Feedback type='invalid'>
+                  {validationErrors.gender}
+                </Form.Control.Feedback>
               </Form.Group>
             </Col>
           </Row>
           
+          <Form.Group controlId='idCard' className='mb-3'>
+            <Form.Label>CMND/CCCD</Form.Label>
+            <Form.Control
+              type='text'
+              placeholder='Nhập CMND/CCCD'
+              value={idCard}
+              onChange={(e) => setIdCard(e.target.value)}
+              isInvalid={!!validationErrors.idCard}
+            />
+            <Form.Control.Feedback type='invalid'>
+              {validationErrors.idCard}
+            </Form.Control.Feedback>
+          </Form.Group>
+          
           <Row>
-            <Col md={4}>
-              <Form.Group controlId='idCard' className='mb-3'>
-                <Form.Label>ID Card</Form.Label>
-                <Form.Control
-                  type='text'
-                  placeholder='Enter ID card'
-                  value={idCard}
-                  onChange={(e) => setIdCard(e.target.value)}
-                  isInvalid={!!validationErrors.idCard}
-                />
-                <Form.Control.Feedback type='invalid'>
-                  {validationErrors.idCard}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
-            
-            <Col md={4}>
+            <Col md={6}>
               <Form.Group controlId='idCardDate' className='mb-3'>
-                <Form.Label>ID Card Date</Form.Label>
+                <Form.Label>Ngày Cấp</Form.Label>
                 <Form.Control
                   type='date'
                   value={idCardDate}
@@ -277,12 +285,12 @@ const ResidentEditScreen = () => {
               </Form.Group>
             </Col>
             
-            <Col md={4}>
+            <Col md={6}>
               <Form.Group controlId='idCardPlace' className='mb-3'>
-                <Form.Label>ID Card Place</Form.Label>
+                <Form.Label>Nơi Cấp</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter ID card place'
+                  placeholder='Nhập nơi cấp CMND/CCCD'
                   value={idCardPlace}
                   onChange={(e) => setIdCardPlace(e.target.value)}
                 />
@@ -290,51 +298,47 @@ const ResidentEditScreen = () => {
             </Col>
           </Row>
           
+          <Form.Group controlId='placeOfBirth' className='mb-3'>
+            <Form.Label>Nơi Sinh</Form.Label>
+            <Form.Control
+              type='text'
+              placeholder='Nhập nơi sinh'
+              value={placeOfBirth}
+              onChange={(e) => setPlaceOfBirth(e.target.value)}
+            />
+          </Form.Group>
+          
           <Row>
-            <Col md={6}>
-              <Form.Group controlId='placeOfBirth' className='mb-3'>
-                <Form.Label>Place of Birth</Form.Label>
-                <Form.Control
-                  type='text'
-                  placeholder='Enter place of birth'
-                  value={placeOfBirth}
-                  onChange={(e) => setPlaceOfBirth(e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-            
-            <Col md={6}>
+            <Col md={4}>
               <Form.Group controlId='nationality' className='mb-3'>
-                <Form.Label>Nationality</Form.Label>
+                <Form.Label>Quốc Tịch</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter nationality'
+                  placeholder='Nhập quốc tịch'
                   value={nationality}
                   onChange={(e) => setNationality(e.target.value)}
                 />
               </Form.Group>
             </Col>
-          </Row>
-          
-          <Row>
-            <Col md={6}>
+            
+            <Col md={4}>
               <Form.Group controlId='ethnicity' className='mb-3'>
-                <Form.Label>Ethnicity</Form.Label>
+                <Form.Label>Dân Tộc</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter ethnicity'
+                  placeholder='Nhập dân tộc'
                   value={ethnicity}
                   onChange={(e) => setEthnicity(e.target.value)}
                 />
               </Form.Group>
             </Col>
             
-            <Col md={6}>
+            <Col md={4}>
               <Form.Group controlId='religion' className='mb-3'>
-                <Form.Label>Religion</Form.Label>
+                <Form.Label>Tôn Giáo</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter religion'
+                  placeholder='Nhập tôn giáo'
                   value={religion}
                   onChange={(e) => setReligion(e.target.value)}
                 />
@@ -345,10 +349,10 @@ const ResidentEditScreen = () => {
           <Row>
             <Col md={6}>
               <Form.Group controlId='occupation' className='mb-3'>
-                <Form.Label>Occupation</Form.Label>
+                <Form.Label>Nghề Nghiệp</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter occupation'
+                  placeholder='Nhập nghề nghiệp'
                   value={occupation}
                   onChange={(e) => setOccupation(e.target.value)}
                 />
@@ -357,10 +361,10 @@ const ResidentEditScreen = () => {
             
             <Col md={6}>
               <Form.Group controlId='workplace' className='mb-3'>
-                <Form.Label>Workplace</Form.Label>
+                <Form.Label>Nơi Làm Việc</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter workplace'
+                  placeholder='Nhập nơi làm việc'
                   value={workplace}
                   onChange={(e) => setWorkplace(e.target.value)}
                 />
@@ -368,47 +372,41 @@ const ResidentEditScreen = () => {
             </Col>
           </Row>
           
-          <Row>
-            <Col md={6}>
-              <Form.Group controlId='phone' className='mb-3'>
-                <Form.Label>Phone</Form.Label>
-                <Form.Control
-                  type='text'
-                  placeholder='Enter phone'
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  isInvalid={!!validationErrors.phone}
-                />
-                <Form.Control.Feedback type='invalid'>
-                  {validationErrors.phone}
-                </Form.Control.Feedback>
-              </Form.Group>
-            </Col>
-            
-            <Col md={6}>
-              <Form.Group controlId='household' className='mb-3'>
-                <Form.Label>Household</Form.Label>
-                <Form.Select
-                  value={householdId}
-                  onChange={(e) => setHouseholdId(e.target.value)}
-                >
-                  <option value="">Not assigned</option>
-                  {households.map((household) => (
-                    <option key={household._id} value={household._id}>
-                      {household.householdCode} - {household.apartmentNumber}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
+          <Form.Group controlId='phone' className='mb-3'>
+            <Form.Label>Số Điện Thoại</Form.Label>
+            <Form.Control
+              type='text'
+              placeholder='Nhập số điện thoại'
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              isInvalid={!!validationErrors.phone}
+            />
+            <Form.Control.Feedback type='invalid'>
+              {validationErrors.phone}
+            </Form.Control.Feedback>
+          </Form.Group>
+          
+          <Form.Group controlId='household' className='mb-3'>
+            <Form.Label>Hộ Gia Đình</Form.Label>
+            <Form.Select
+              value={householdId}
+              onChange={(e) => setHouseholdId(e.target.value)}
+            >
+              <option value=''>Không thuộc hộ nào</option>
+              {households.map((household) => (
+                <option key={household._id} value={household._id}>
+                  {household.householdCode} - {household.apartmentNumber}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
           
           <Form.Group controlId='note' className='mb-3'>
-            <Form.Label>Note</Form.Label>
+            <Form.Label>Ghi Chú</Form.Label>
             <Form.Control
               as='textarea'
               rows={3}
-              placeholder='Enter note (optional)'
+              placeholder='Nhập ghi chú (không bắt buộc)'
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -418,7 +416,7 @@ const ResidentEditScreen = () => {
             <Form.Group controlId='active' className='mb-3'>
               <Form.Check
                 type='checkbox'
-                label='Active'
+                label='Đang hoạt động'
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
               />
@@ -426,7 +424,7 @@ const ResidentEditScreen = () => {
           )}
           
           <Button type='submit' variant='primary' className='mt-3'>
-            {isEditMode ? 'Update' : 'Create'}
+            {isEditMode ? 'Cập Nhật' : 'Tạo Mới'}
           </Button>
         </Form>
       </FormContainer>

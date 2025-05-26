@@ -112,7 +112,7 @@ exports.updateHousehold = async (req, res) => {
   }
 };
 
-// @desc    Delete a household (soft delete)
+// @desc    Delete a household (hard delete)
 // @route   DELETE /api/households/:id
 // @access  Private/Admin
 exports.deleteHousehold = async (req, res) => {
@@ -123,11 +123,18 @@ exports.deleteHousehold = async (req, res) => {
       return res.status(404).json({ message: 'Household not found' });
     }
     
-    // Soft delete by setting active to false
-    household.active = false;
-    await household.save();
+    // Check if there are residents belonging to this household
+    const residents = await Resident.find({ household: req.params.id });
+    if (residents.length > 0) {
+      return res.status(400).json({ 
+        message: 'Không thể xóa hộ gia đình này vì vẫn còn cư dân thuộc hộ. Vui lòng xóa hoặc chuyển các cư dân trước.'
+      });
+    }
     
-    res.json({ message: 'Household deactivated' });
+    // Hard delete the household
+    await Household.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Household deleted successfully' });
   } catch (error) {
     console.error(error);
     if (error.kind === 'ObjectId') {

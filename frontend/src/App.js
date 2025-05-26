@@ -15,6 +15,7 @@ import FeeListScreen from './screens/FeeListScreen';
 import FeeEditScreen from './screens/FeeEditScreen';
 import PaymentListScreen from './screens/PaymentListScreen';
 import PaymentCreateScreen from './screens/PaymentCreateScreen';
+import PaymentSearchScreen from './screens/PaymentSearchScreen';
 import ResidentListScreen from './screens/ResidentListScreen';
 import ResidentEditScreen from './screens/ResidentEditScreen';
 import NotFoundScreen from './screens/NotFoundScreen';
@@ -53,6 +54,7 @@ function App() {
                 
                 <Route path="/payments" element={<PaymentListScreen />} />
                 <Route path="/payments/create" element={<PaymentCreateScreen />} />
+                <Route path="/payments/search" element={<PaymentSearchScreen />} />
               </Route>
               
               {/* Routes accessible only to managers and admins */}

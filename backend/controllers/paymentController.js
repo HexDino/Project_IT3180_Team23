@@ -8,7 +8,7 @@ const Household = require('../models/householdModel');
 exports.getPayments = async (req, res) => {
   try {
     const payments = await Payment.find()
-      .populate('fee', 'name type amount')
+      .populate('fee', 'name feeType amount')
       .populate('household', 'householdCode apartmentNumber')
       .sort({ paymentDate: -1 });
     
@@ -25,7 +25,7 @@ exports.getPayments = async (req, res) => {
 exports.getPaymentById = async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id)
-      .populate('fee', 'name type amount dueDate')
+      .populate('fee', 'name feeType amount startDate endDate')
       .populate('household', 'householdCode apartmentNumber');
     
     if (!payment) {
@@ -52,8 +52,10 @@ exports.createPayment = async (req, res) => {
       household, 
       amount,
       paymentDate,
-      paymentMethod,
-      receiptNo,
+      payerName,
+      payerId,
+      payerPhone,
+      receiptNumber,
       note
     } = req.body;
     
@@ -87,17 +89,19 @@ exports.createPayment = async (req, res) => {
       household,
       amount: amount || feeExists.amount,
       paymentDate: paymentDate || Date.now(),
-      paymentMethod,
-      receiptNo,
-      collectedBy: req.user._id, // User who created the payment
+      payerName,
+      payerId,
+      payerPhone,
+      receiptNumber,
+      collector: req.user._id, // User who created the payment
       note
     });
     
     // Populate the new payment with fee and household details
     const populatedPayment = await Payment.findById(payment._id)
-      .populate('fee', 'name type amount')
+      .populate('fee', 'name feeType amount')
       .populate('household', 'householdCode apartmentNumber')
-      .populate('collectedBy', 'name');
+      .populate('collector', 'name');
     
     res.status(201).json(populatedPayment);
   } catch (error) {
@@ -114,8 +118,10 @@ exports.updatePayment = async (req, res) => {
     const {
       amount,
       paymentDate,
-      paymentMethod,
-      receiptNo,
+      payerName,
+      payerId,
+      payerPhone,
+      receiptNumber,
       note,
       isRefunded,
       refundReason
@@ -130,8 +136,10 @@ exports.updatePayment = async (req, res) => {
     // Update fields
     payment.amount = amount !== undefined ? amount : payment.amount;
     payment.paymentDate = paymentDate || payment.paymentDate;
-    payment.paymentMethod = paymentMethod || payment.paymentMethod;
-    payment.receiptNo = receiptNo || payment.receiptNo;
+    payment.payerName = payerName !== undefined ? payerName : payment.payerName;
+    payment.payerId = payerId !== undefined ? payerId : payment.payerId;
+    payment.payerPhone = payerPhone !== undefined ? payerPhone : payment.payerPhone;
+    payment.receiptNumber = receiptNumber || payment.receiptNumber;
     payment.note = note !== undefined ? note : payment.note;
     
     // Handle refund
@@ -148,9 +156,9 @@ exports.updatePayment = async (req, res) => {
     
     // Populate the updated payment
     const populatedPayment = await Payment.findById(updatedPayment._id)
-      .populate('fee', 'name type amount')
+      .populate('fee', 'name feeType amount')
       .populate('household', 'householdCode apartmentNumber')
-      .populate('collectedBy', 'name')
+      .populate('collector', 'name')
       .populate('refundedBy', 'name');
     
     res.json(populatedPayment);
@@ -177,7 +185,7 @@ exports.getPaymentsByHousehold = async (req, res) => {
     }
     
     const payments = await Payment.find({ household: id })
-      .populate('fee', 'name type amount dueDate')
+      .populate('fee', 'name feeType amount startDate endDate')
       .sort({ paymentDate: -1 });
     
     res.json(payments);
@@ -214,5 +222,114 @@ exports.getPaymentsByFee = async (req, res) => {
       return res.status(404).json({ message: 'Fee not found' });
     }
     res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Search payments
+// @route   GET /api/payments/search
+// @access  Private
+exports.searchPayments = async (req, res) => {
+  try {
+    const { 
+      householdCode, 
+      apartmentNumber, 
+      feeName, 
+      feeType, 
+      startDate, 
+      endDate, 
+      minAmount, 
+      maxAmount,
+      payerName
+    } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    // Create date range if provided
+    if (startDate || endDate) {
+      query.paymentDate = {};
+      if (startDate) {
+        query.paymentDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateObj = new Date(endDate);
+        endDateObj.setHours(23, 59, 59, 999);
+        query.paymentDate.$lte = endDateObj;
+      }
+    }
+    
+    // Add amount range if provided
+    if (minAmount || maxAmount) {
+      query.amount = {};
+      if (minAmount) {
+        query.amount.$gte = parseFloat(minAmount);
+      }
+      if (maxAmount) {
+        query.amount.$lte = parseFloat(maxAmount);
+      }
+    }
+    
+    // Add payer name if provided
+    if (payerName) {
+      query.payerName = { $regex: payerName, $options: 'i' };
+    }
+    
+    // First get all matching households if household criteria provided
+    let householdIds = [];
+    if (householdCode || apartmentNumber) {
+      const householdQuery = {};
+      
+      if (householdCode) {
+        householdQuery.householdCode = { $regex: householdCode, $options: 'i' };
+      }
+      
+      if (apartmentNumber) {
+        householdQuery.apartmentNumber = { $regex: apartmentNumber, $options: 'i' };
+      }
+      
+      const households = await Household.find(householdQuery);
+      householdIds = households.map(h => h._id);
+      
+      if (householdIds.length === 0) {
+        return res.json([]);
+      }
+      
+      query.household = { $in: householdIds };
+    }
+    
+    // Get all matching fees if fee criteria provided
+    let feeIds = [];
+    if (feeName || feeType) {
+      const feeQuery = {};
+      
+      if (feeName) {
+        feeQuery.name = { $regex: feeName, $options: 'i' };
+      }
+      
+      if (feeType) {
+        feeQuery.feeType = feeType;
+      }
+      
+      const fees = await Fee.find(feeQuery);
+      feeIds = fees.map(f => f._id);
+      
+      if (feeIds.length === 0) {
+        return res.json([]);
+      }
+      
+      query.fee = { $in: feeIds };
+    }
+    
+    // Execute the query
+    const payments = await Payment.find(query)
+      .populate('fee', 'name feeType amount')
+      .populate('household', 'householdCode apartmentNumber')
+      .populate('collector', 'fullName')
+      .sort({ paymentDate: -1 });
+    
+    res.json(payments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server' });
   }
 }; 

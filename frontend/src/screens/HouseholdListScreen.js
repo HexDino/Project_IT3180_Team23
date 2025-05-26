@@ -38,14 +38,14 @@ const HouseholdListScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load households'
+          : 'Không thể tải danh sách hộ gia đình'
       );
       setLoading(false);
     }
   };
   
   const deleteHandler = async (id) => {
-    if (window.confirm('Are you sure you want to delete this household?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa hộ gia đình này không?')) {
       try {
         setLoading(true);
         
@@ -62,7 +62,7 @@ const HouseholdListScreen = () => {
         setError(
           error.response && error.response.data.message
             ? error.response.data.message
-            : 'Failed to delete household'
+            : 'Không thể xóa hộ gia đình'
         );
         setLoading(false);
       }
@@ -80,11 +80,11 @@ const HouseholdListScreen = () => {
     <>
       <Row className="align-items-center mb-3">
         <Col>
-          <h1>Households</h1>
+          <h1>Hộ Gia Đình</h1>
         </Col>
         <Col className="text-end">
           <Button className="my-3" onClick={() => navigate('/households/create')}>
-            <i className="fas fa-plus"></i> Add Household
+            <i className="fas fa-plus"></i> Thêm Hộ Gia Đình
           </Button>
         </Col>
       </Row>
@@ -94,7 +94,7 @@ const HouseholdListScreen = () => {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Search by household code, apartment number, or address"
+              placeholder="Tìm kiếm theo mã hộ, số căn hộ, hoặc địa chỉ"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -119,11 +119,11 @@ const HouseholdListScreen = () => {
           <Table striped bordered hover responsive className="table-sm">
             <thead>
               <tr>
-                <th>Household Code</th>
-                <th>Apartment</th>
-                <th>Address</th>
-                <th>Household Head</th>
-                <th>Status</th>
+                <th>Mã Hộ</th>
+                <th>Căn Hộ</th>
+                <th>Địa Chỉ</th>
+                <th>Chủ Hộ</th>
+                <th>Trạng Thái</th>
                 <th></th>
               </tr>
             </thead>
@@ -136,13 +136,13 @@ const HouseholdListScreen = () => {
                   <td>
                     {household.householdHead
                       ? household.householdHead.fullName
-                      : 'Not Assigned'}
+                      : 'Chưa Gán'}
                   </td>
                   <td>
                     {household.active ? (
-                      <span className="text-success">Active</span>
+                      <span className="text-success">Hoạt Động</span>
                     ) : (
-                      <span className="text-danger">Inactive</span>
+                      <span className="text-danger">Không Hoạt Động</span>
                     )}
                   </td>
                   <td>
@@ -171,7 +171,7 @@ const HouseholdListScreen = () => {
             </tbody>
           </Table>
           {filteredHouseholds.length === 0 && (
-            <Message>No households found</Message>
+            <Message>Không tìm thấy hộ gia đình nào</Message>
           )}
         </>
       )}

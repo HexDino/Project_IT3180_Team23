@@ -156,7 +156,7 @@ exports.updateResident = async (req, res) => {
   }
 };
 
-// @desc    Delete a resident (soft delete)
+// @desc    Delete a resident (hard delete)
 // @route   DELETE /api/residents/:id
 // @access  Private/Admin
 exports.deleteResident = async (req, res) => {
@@ -167,10 +167,6 @@ exports.deleteResident = async (req, res) => {
       return res.status(404).json({ message: 'Resident not found' });
     }
     
-    // Soft delete by setting active to false
-    resident.active = false;
-    await resident.save();
-    
     // If this resident is a household head, remove that reference
     if (resident.household) {
       const household = await Household.findById(resident.household);
@@ -180,7 +176,10 @@ exports.deleteResident = async (req, res) => {
       }
     }
     
-    res.json({ message: 'Resident deactivated' });
+    // Hard delete the resident
+    await Resident.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Resident deleted successfully' });
   } catch (error) {
     console.error(error);
     if (error.kind === 'ObjectId') {

@@ -58,7 +58,7 @@ const PaymentCreateScreen = () => {
       const { data } = await axios.get('/api/households', config);
       setHouseholds(data);
     } catch (error) {
-      console.error('Error fetching households:', error);
+      console.error('Lỗi khi tải danh sách hộ gia đình:', error);
     }
   };
   
@@ -73,17 +73,17 @@ const PaymentCreateScreen = () => {
       const { data } = await axios.get('/api/fees', config);
       setFees(data.filter(fee => fee.active));
     } catch (error) {
-      console.error('Error fetching fees:', error);
+      console.error('Lỗi khi tải danh sách phí:', error);
     }
   };
   
   const validateForm = () => {
     const errors = {};
     
-    if (!householdId) errors.householdId = 'Household is required';
-    if (!feeId) errors.feeId = 'Fee is required';
-    if (!amount || amount <= 0) errors.amount = 'Amount must be greater than 0';
-    if (!paymentDate) errors.paymentDate = 'Payment date is required';
+    if (!householdId) errors.householdId = 'Hộ gia đình là bắt buộc';
+    if (!feeId) errors.feeId = 'Loại phí là bắt buộc';
+    if (!amount || amount <= 0) errors.amount = 'Số tiền phải lớn hơn 0';
+    if (!paymentDate) errors.paymentDate = 'Ngày thanh toán là bắt buộc';
     
     setValidationErrors(errors);
     
@@ -129,7 +129,7 @@ const PaymentCreateScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to create payment'
+          : 'Không thể tạo thanh toán'
       );
     } finally {
       setLoading(false);
@@ -154,26 +154,26 @@ const PaymentCreateScreen = () => {
   return (
     <>
       <Link to='/payments' className='btn btn-light my-3'>
-        <i className="fas fa-arrow-left"></i> Back to Payments
+        <i className="fas fa-arrow-left"></i> Quay lại Thanh Toán
       </Link>
       
       <FormContainer>
-        <h1>Create Payment</h1>
+        <h1>Tạo Thanh Toán Mới</h1>
         
         {error && <Message variant='danger'>{error}</Message>}
-        {success && <Message variant='success'>Payment created successfully</Message>}
+        {success && <Message variant='success'>Thanh toán đã được tạo thành công</Message>}
         {loading && <Loader />}
         
         <Form onSubmit={submitHandler}>
           <Form.Group controlId='household' className='mb-3'>
-            <Form.Label>Household</Form.Label>
+            <Form.Label>Hộ Gia Đình</Form.Label>
             <Form.Select
               value={householdId}
               onChange={(e) => setHouseholdId(e.target.value)}
               isInvalid={!!validationErrors.householdId}
               required
             >
-              <option value="">Select Household</option>
+              <option value="">Chọn Hộ Gia Đình</option>
               {households.map((household) => (
                 <option key={household._id} value={household._id}>
                   {household.householdCode} - {household.apartmentNumber}
@@ -186,17 +186,17 @@ const PaymentCreateScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='fee' className='mb-3'>
-            <Form.Label>Fee</Form.Label>
+            <Form.Label>Loại Phí</Form.Label>
             <Form.Select
               value={feeId}
               onChange={(e) => setFeeId(e.target.value)}
               isInvalid={!!validationErrors.feeId}
               required
             >
-              <option value="">Select Fee</option>
+              <option value="">Chọn Loại Phí</option>
               {fees.map((fee) => (
                 <option key={fee._id} value={fee._id}>
-                  {fee.name} (${fee.amount})
+                  {fee.name} ({fee.amount.toLocaleString()} VND)
                 </option>
               ))}
             </Form.Select>
@@ -206,10 +206,10 @@ const PaymentCreateScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='amount' className='mb-3'>
-            <Form.Label>Amount</Form.Label>
+            <Form.Label>Số Tiền</Form.Label>
             <Form.Control
               type='number'
-              placeholder='Enter amount'
+              placeholder='Nhập số tiền'
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               isInvalid={!!validationErrors.amount}
@@ -223,7 +223,7 @@ const PaymentCreateScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='paymentDate' className='mb-3'>
-            <Form.Label>Payment Date</Form.Label>
+            <Form.Label>Ngày Thanh Toán</Form.Label>
             <Form.Control
               type='date'
               value={paymentDate}
@@ -239,10 +239,10 @@ const PaymentCreateScreen = () => {
           <Row>
             <Col md={6}>
               <Form.Group controlId='payerName' className='mb-3'>
-                <Form.Label>Payer Name</Form.Label>
+                <Form.Label>Tên Người Thanh Toán</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter payer name'
+                  placeholder='Nhập tên người thanh toán'
                   value={payerName}
                   onChange={(e) => setPayerName(e.target.value)}
                 />
@@ -251,10 +251,10 @@ const PaymentCreateScreen = () => {
             
             <Col md={6}>
               <Form.Group controlId='payerPhone' className='mb-3'>
-                <Form.Label>Payer Phone</Form.Label>
+                <Form.Label>Số Điện Thoại</Form.Label>
                 <Form.Control
                   type='text'
-                  placeholder='Enter payer phone'
+                  placeholder='Nhập số điện thoại'
                   value={payerPhone}
                   onChange={(e) => setPayerPhone(e.target.value)}
                 />
@@ -263,41 +263,41 @@ const PaymentCreateScreen = () => {
           </Row>
           
           <Form.Group controlId='payerId' className='mb-3'>
-            <Form.Label>Payer ID</Form.Label>
+            <Form.Label>CMND/CCCD</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter payer ID'
+              placeholder='Nhập CMND/CCCD'
               value={payerId}
               onChange={(e) => setPayerId(e.target.value)}
             />
           </Form.Group>
           
           <Form.Group controlId='receiptNumber' className='mb-3'>
-            <Form.Label>Receipt Number</Form.Label>
+            <Form.Label>Mã Biên Lai</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter receipt number'
+              placeholder='Nhập mã biên lai'
               value={receiptNumber}
               onChange={(e) => setReceiptNumber(e.target.value)}
             />
             <Form.Text className="text-muted">
-              Auto-generated, but can be changed
+              Tự động tạo, nhưng có thể thay đổi
             </Form.Text>
           </Form.Group>
           
           <Form.Group controlId='note' className='mb-3'>
-            <Form.Label>Note</Form.Label>
+            <Form.Label>Ghi Chú</Form.Label>
             <Form.Control
               as='textarea'
               rows={3}
-              placeholder='Enter note (optional)'
+              placeholder='Nhập ghi chú (không bắt buộc)'
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
           </Form.Group>
           
           <Button type='submit' variant='primary' className='mt-3'>
-            Create Payment
+            Tạo Thanh Toán
           </Button>
         </Form>
       </FormContainer>

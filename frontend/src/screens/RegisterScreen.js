@@ -30,7 +30,7 @@ const RegisterScreen = () => {
     
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Mật khẩu không khớp');
       return;
     }
     
@@ -59,22 +59,22 @@ const RegisterScreen = () => {
       <Col md={6}>
         <Card className="p-4 shadow">
           <Card.Body>
-            <h2 className="text-center mb-4">Register</h2>
+            <h2 className="text-center mb-4">Đăng Ký</h2>
             
             {error && <Message variant="danger">{error}</Message>}
             {success && (
               <Message variant="success">
-                Registration successful! Redirecting to login...
+                Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...
               </Message>
             )}
             {loading && <Loader />}
             
             <Form onSubmit={submitHandler}>
               <Form.Group controlId="name" className="mb-3">
-                <Form.Label>Full Name</Form.Label>
+                <Form.Label>Họ và tên</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Enter full name"
+                  placeholder="Nhập họ và tên"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -82,10 +82,10 @@ const RegisterScreen = () => {
               </Form.Group>
               
               <Form.Group controlId="email" className="mb-3">
-                <Form.Label>Email Address</Form.Label>
+                <Form.Label>Địa chỉ Email</Form.Label>
                 <Form.Control
                   type="email"
-                  placeholder="Enter email"
+                  placeholder="Nhập địa chỉ email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -93,10 +93,10 @@ const RegisterScreen = () => {
               </Form.Group>
               
               <Form.Group controlId="password" className="mb-3">
-                <Form.Label>Password</Form.Label>
+                <Form.Label>Mật khẩu</Form.Label>
                 <Form.Control
                   type="password"
-                  placeholder="Enter password"
+                  placeholder="Nhập mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -104,10 +104,10 @@ const RegisterScreen = () => {
               </Form.Group>
               
               <Form.Group controlId="confirmPassword" className="mb-3">
-                <Form.Label>Confirm Password</Form.Label>
+                <Form.Label>Xác nhận mật khẩu</Form.Label>
                 <Form.Control
                   type="password"
-                  placeholder="Confirm password"
+                  placeholder="Xác nhận mật khẩu"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -120,12 +120,12 @@ const RegisterScreen = () => {
                 className="w-100 mt-3"
                 disabled={loading}
               >
-                {loading ? 'Registering...' : 'Register'}
+                {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
               </Button>
               
               <div className="text-center mt-3">
-                Already have an account?{' '}
-                <Link to="/login">Sign In</Link>
+                Đã có tài khoản?{' '}
+                <Link to="/login">Đăng Nhập</Link>
               </div>
             </Form>
           </Card.Body>

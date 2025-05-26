@@ -5,7 +5,8 @@ const {
   createPayment,
   updatePayment,
   getPaymentsByHousehold,
-  getPaymentsByFee
+  getPaymentsByFee,
+  searchPayments
 } = require('../controllers/paymentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -17,6 +18,9 @@ router.use(protect);
 router.route('/')
   .get(getPayments)
   .post(authorize(['admin', 'accountant']), createPayment);
+
+router.route('/search')
+  .get(searchPayments);
 
 router.route('/household/:id')
   .get(getPaymentsByHousehold);

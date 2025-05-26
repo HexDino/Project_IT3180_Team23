@@ -38,14 +38,14 @@ const ResidentListScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load residents'
+          : 'Không thể tải danh sách cư dân'
       );
       setLoading(false);
     }
   };
   
   const deleteHandler = async (id) => {
-    if (window.confirm('Are you sure you want to delete this resident?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa cư dân này không?')) {
       try {
         setLoading(true);
         
@@ -62,7 +62,7 @@ const ResidentListScreen = () => {
         setError(
           error.response && error.response.data.message
             ? error.response.data.message
-            : 'Failed to delete resident'
+            : 'Không thể xóa cư dân'
         );
         setLoading(false);
       }
@@ -86,14 +86,14 @@ const ResidentListScreen = () => {
     <>
       <Row className="align-items-center mb-3">
         <Col>
-          <h1>Residents</h1>
+          <h1>Cư Dân</h1>
         </Col>
         <Col className="text-end">
           <Button 
             className="btn-sm"
             onClick={() => navigate('/residents/create')}
           >
-            <i className="fas fa-plus"></i> Add Resident
+            <i className="fas fa-plus"></i> Thêm Cư Dân
           </Button>
         </Col>
       </Row>
@@ -103,7 +103,7 @@ const ResidentListScreen = () => {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Search residents..."
+              placeholder="Tìm kiếm cư dân..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -111,7 +111,7 @@ const ResidentListScreen = () => {
               variant="outline-secondary"
               onClick={() => setSearchTerm('')}
             >
-              Clear
+              Xóa
             </Button>
           </InputGroup>
         </Col>
@@ -126,13 +126,13 @@ const ResidentListScreen = () => {
           <Table striped bordered hover responsive className="table-sm">
             <thead>
               <tr>
-                <th>Full Name</th>
-                <th>ID Card</th>
-                <th>Date of Birth</th>
-                <th>Gender</th>
-                <th>Phone</th>
-                <th>Household</th>
-                <th>Status</th>
+                <th>Họ Tên</th>
+                <th>CMND/CCCD</th>
+                <th>Ngày Sinh</th>
+                <th>Giới Tính</th>
+                <th>Điện Thoại</th>
+                <th>Hộ Gia Đình</th>
+                <th>Trạng Thái</th>
                 <th></th>
               </tr>
             </thead>
@@ -141,8 +141,8 @@ const ResidentListScreen = () => {
                 <tr key={resident._id}>
                   <td>{resident.fullName}</td>
                   <td>{resident.idCard || 'N/A'}</td>
-                  <td>{resident.dateOfBirth ? new Date(resident.dateOfBirth).toLocaleDateString() : 'N/A'}</td>
-                  <td>{resident.gender || 'N/A'}</td>
+                  <td>{resident.dateOfBirth ? new Date(resident.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</td>
+                  <td>{resident.gender === 'male' ? 'Nam' : resident.gender === 'female' ? 'Nữ' : 'N/A'}</td>
                   <td>{resident.phone || 'N/A'}</td>
                   <td>
                     {resident.household ? (
@@ -150,14 +150,14 @@ const ResidentListScreen = () => {
                         {resident.household.householdCode} - {resident.household.apartmentNumber}
                       </>
                     ) : (
-                      'Not assigned'
+                      'Chưa gán'
                     )}
                   </td>
                   <td>
                     {resident.active ? (
-                      <span className="text-success">Active</span>
+                      <span className="text-success">Hoạt động</span>
                     ) : (
-                      <span className="text-danger">Inactive</span>
+                      <span className="text-danger">Không hoạt động</span>
                     )}
                   </td>
                   <td>
@@ -186,7 +186,7 @@ const ResidentListScreen = () => {
             </tbody>
           </Table>
           {filteredResidents.length === 0 && (
-            <Message>No residents found</Message>
+            <Message>Không tìm thấy cư dân nào</Message>
           )}
         </>
       )}

@@ -38,17 +38,17 @@ const LoginScreen = () => {
       <Col md={6}>
         <Card className="p-4 shadow">
           <Card.Body>
-            <h2 className="text-center mb-4">Sign In</h2>
+            <h2 className="text-center mb-4">Đăng Nhập</h2>
             
             {error && <Message variant="danger">{error}</Message>}
             {loading && <Loader />}
             
             <Form onSubmit={submitHandler}>
               <Form.Group controlId="username" className="mb-3">
-                <Form.Label>Username</Form.Label>
+                <Form.Label>Tên đăng nhập</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Enter username"
+                  placeholder="Nhập tên đăng nhập"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -56,10 +56,10 @@ const LoginScreen = () => {
               </Form.Group>
               
               <Form.Group controlId="password" className="mb-3">
-                <Form.Label>Password</Form.Label>
+                <Form.Label>Mật khẩu</Form.Label>
                 <Form.Control
                   type="password"
-                  placeholder="Enter password"
+                  placeholder="Nhập mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -72,18 +72,18 @@ const LoginScreen = () => {
                 className="w-100 mt-3"
                 disabled={loading}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
               </Button>
               
               <div className="text-center mt-3">
                 <div className="mb-2">
-                  New user? <Link to="/register">Register here</Link>
+                  Người dùng mới? <Link to="/register">Đăng ký tại đây</Link>
                 </div>
               </div>
             </Form>
 
             <div className="alert alert-info mt-3">
-              <p className="mb-0"><strong>Test Account:</strong> admin / admin123</p>
+              <p className="mb-0"><strong>Tài khoản thử nghiệm:</strong> admin / admin123</p>
             </div>
           </Card.Body>
         </Card>

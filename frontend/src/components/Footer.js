@@ -7,7 +7,7 @@ const Footer = () => {
       <Container>
         <Row>
           <Col className="text-center py-3">
-            <p>BlueMoon Apartment Fee Management &copy; {new Date().getFullYear()}</p>
+            <p>Quản Lý Phí Chung Cư BlueMoon &copy; {new Date().getFullYear()}</p>
           </Col>
         </Row>
       </Container>

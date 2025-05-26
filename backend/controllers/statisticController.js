@@ -25,15 +25,59 @@ exports.getDashboardStats = async (req, res) => {
     currentMonthEnd.setDate(0);
     currentMonthEnd.setHours(23, 59, 59, 999);
     
+    // Lấy các khoản thanh toán của tháng hiện tại (đã thanh toán và chưa hoàn tiền)
+    console.log("Tháng hiện tại: ", {
+      start: currentMonthStart,
+      end: currentMonthEnd
+    });
+    
     const paymentsThisMonth = await Payment.find({
       paymentDate: { 
         $gte: currentMonthStart, 
         $lte: currentMonthEnd 
       },
       isRefunded: false
-    });
+    }).populate('fee', 'name feeType');
+    
+    console.log("Số lượng thanh toán tháng này: ", paymentsThisMonth.length);
+    console.log("Chi tiết các thanh toán: ", paymentsThisMonth.map(p => ({
+      id: p._id,
+      amount: p.amount,
+      date: p.paymentDate,
+      fee: p.fee ? p.fee.name : 'unknown'
+    })));
     
     const monthlyRevenue = paymentsThisMonth.reduce((total, payment) => total + payment.amount, 0);
+    console.log("Tổng doanh thu tháng hiện tại: ", monthlyRevenue);
+    
+    // Sử dụng tháng hiện tại để hiển thị doanh thu
+    const displayedMonthStart = currentMonthStart;
+    const displayedMonthEnd = currentMonthEnd;
+    const paymentsToDisplay = paymentsThisMonth;
+    const displayedRevenue = monthlyRevenue;
+    
+    // Lấy tên tháng tiếng Việt cho tháng hiện tại
+    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 
+                       'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+    const displayMonthName = `${monthNames[displayedMonthStart.getMonth()]}/${displayedMonthStart.getFullYear()}`;
+    
+    // Tính tỷ lệ doanh thu theo loại phí cho tháng hiển thị
+    const revenueByType = {};
+    
+    paymentsToDisplay.forEach(payment => {
+      // Sử dụng tên phí thay vì feeType để phân loại chi tiết hơn
+      const feeName = payment.fee ? payment.fee.name : 'Phí khác';
+      const feeDisplayName = translateFeeName(feeName);
+      
+      if (!revenueByType[feeDisplayName]) {
+        revenueByType[feeDisplayName] = 0;
+      }
+      
+      revenueByType[feeDisplayName] += payment.amount;
+    });
+    
+    // Lấy dữ liệu doanh thu theo tháng trong 6 tháng gần nhất
+    const monthlyTrend = await getMonthlyRevenueTrend();
     
     // Get counts for temporary residences and absences
     const tempResidenceCount = await TemporaryResidence.countDocuments({
@@ -46,28 +90,14 @@ exports.getDashboardStats = async (req, res) => {
       endDate: { $gte: new Date() }
     });
     
-    // Get most recent payments
-    const recentPayments = await Payment.find()
+    // Get most recent payments (ưu tiên thanh toán trong tháng hiện tại)
+    const recentPayments = await Payment.find({
+      isRefunded: false
+    })
       .populate('household', 'householdCode apartmentNumber')
-      .populate('fee', 'name type')
+      .populate('fee', 'name type feeType')
       .sort({ paymentDate: -1 })
-      .limit(5);
-    
-    // Calculate revenue by fee type
-    const allPayments = await Payment.find({ isRefunded: false })
-      .populate('fee', 'feeType');
-    
-    const revenueByType = {};
-    
-    allPayments.forEach(payment => {
-      const feeType = payment.fee?.feeType || 'other';
-      
-      if (!revenueByType[feeType]) {
-        revenueByType[feeType] = 0;
-      }
-      
-      revenueByType[feeType] += payment.amount;
-    });
+      .limit(10);
     
     res.json({
       counts: {
@@ -78,8 +108,10 @@ exports.getDashboardStats = async (req, res) => {
         temporaryAbsences: tempAbsenceCount
       },
       financials: {
-        monthlyRevenue,
-        revenueByType
+        monthlyRevenue: displayedRevenue,
+        revenueByType,
+        monthlyTrend,
+        displayMonthName
       },
       recentPayments
     });
@@ -87,6 +119,55 @@ exports.getDashboardStats = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
   }
+};
+
+// Hàm lấy doanh thu theo tháng trong 6 tháng gần nhất
+const getMonthlyRevenueTrend = async () => {
+  // Tạo mảng 6 tháng gần nhất
+  const months = [];
+  const monthNames = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+  const today = new Date();
+  
+  for (let i = 5; i >= 0; i--) {
+    const month = new Date();
+    month.setMonth(today.getMonth() - i);
+    months.push({
+      date: month,
+      name: monthNames[month.getMonth()],
+      revenue: 0
+    });
+  }
+  
+  // Lấy ngày đầu tiên của tháng cách đây 6 tháng
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  sixMonthsAgo.setHours(0, 0, 0, 0);
+  
+  // Lấy toàn bộ thanh toán trong 6 tháng gần nhất (đã thanh toán và chưa hoàn tiền)
+  const payments = await Payment.find({
+    paymentDate: { $gte: sixMonthsAgo },
+    isRefunded: false
+  });
+  
+  // Tính tổng doanh thu theo từng tháng
+  payments.forEach(payment => {
+    const paymentMonth = payment.paymentDate.getMonth();
+    const paymentYear = payment.paymentDate.getFullYear();
+    
+    for (let i = 0; i < months.length; i++) {
+      const month = months[i].date;
+      if (month.getMonth() === paymentMonth && month.getFullYear() === paymentYear) {
+        months[i].revenue += payment.amount;
+        break;
+      }
+    }
+  });
+  
+  return {
+    labels: months.map(m => m.name),
+    data: months.map(m => m.revenue)
+  };
 };
 
 // @desc    Get household payment status
@@ -217,4 +298,40 @@ exports.getMonthlyReport = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Server Error' });
   }
+};
+
+// Hàm chuyển đổi tên loại phí sang tiếng Việt
+const translateFeeType = (feeType) => {
+  const translations = {
+    'service': 'Dịch vụ',
+    'maintenance': 'Bảo trì',
+    'water': 'Nước',
+    'electricity': 'Điện',
+    'parking': 'Đỗ xe',
+    'internet': 'Internet',
+    'security': 'An ninh',
+    'cleaning': 'Vệ sinh',
+    'other': 'Khác'
+  };
+  
+  return translations[feeType] || 'Khác';
+};
+
+// Hàm chuyển đổi tên phí thành dạng hiển thị ngắn gọn
+const translateFeeName = (feeName) => {
+  const feeTranslations = {
+    'Phí quản lý hàng tháng': 'Quản lý',
+    'Phí gửi xe ô tô': 'Gửi xe ô tô', 
+    'Phí gửi xe máy': 'Gửi xe máy',
+    'Phí sửa chữa công trình chung': 'Sửa chữa chung',
+    'Phí bảo trì thang máy': 'Bảo trì thang máy',
+    'Phí an ninh': 'An ninh',
+    'Phí vệ sinh': 'Vệ sinh',
+    'Phí điện': 'Điện',
+    'Phí nước': 'Nước',
+    'Phí internet': 'Internet',
+    'Phí cable TV': 'Cable TV'
+  };
+  
+  return feeTranslations[feeName] || feeName;
 }; 

@@ -40,14 +40,14 @@ const PaymentListScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load payments'
+          : 'Không thể tải danh sách thanh toán'
       );
       setLoading(false);
     }
   };
   
   const handleRefund = async (id) => {
-    if (window.confirm('Are you sure you want to refund this payment? This action cannot be undone.')) {
+    if (window.confirm('Bạn có chắc chắn muốn hoàn tiền khoản thanh toán này? Hành động này không thể hoàn tác.')) {
       try {
         setLoading(true);
         
@@ -64,7 +64,7 @@ const PaymentListScreen = () => {
         setError(
           error.response && error.response.data.message
             ? error.response.data.message
-            : 'Failed to refund payment'
+            : 'Không thể hoàn tiền khoản thanh toán'
         );
         setLoading(false);
       }
@@ -88,14 +88,14 @@ const PaymentListScreen = () => {
     <>
       <Row className="align-items-center mb-3">
         <Col>
-          <h1>Payments</h1>
+          <h1>Thanh Toán</h1>
         </Col>
         <Col className="text-end">
           <Button 
             className="btn-sm"
             onClick={() => navigate('/payments/create')}
           >
-            <i className="fas fa-plus"></i> Create Payment
+            <i className="fas fa-plus"></i> Tạo Thanh Toán
           </Button>
         </Col>
       </Row>
@@ -105,7 +105,7 @@ const PaymentListScreen = () => {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Search payments..."
+              placeholder="Tìm kiếm thanh toán..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -113,7 +113,7 @@ const PaymentListScreen = () => {
               variant="outline-secondary"
               onClick={() => setSearchTerm('')}
             >
-              Clear
+              Xóa
             </Button>
           </InputGroup>
         </Col>
@@ -128,13 +128,13 @@ const PaymentListScreen = () => {
           <Table striped bordered hover responsive className="table-sm">
             <thead>
               <tr>
-                <th>Receipt #</th>
-                <th>Household</th>
-                <th>Fee</th>
-                <th>Amount</th>
-                <th>Payment Date</th>
-                <th>Payer</th>
-                <th>Status</th>
+                <th>Mã Biên Lai</th>
+                <th>Hộ Gia Đình</th>
+                <th>Loại Phí</th>
+                <th>Số Tiền</th>
+                <th>Ngày Thanh Toán</th>
+                <th>Người Thanh Toán</th>
+                <th>Trạng Thái</th>
                 <th></th>
               </tr>
             </thead>
@@ -152,14 +152,14 @@ const PaymentListScreen = () => {
                     )}
                   </td>
                   <td>{payment.fee ? payment.fee.name : 'N/A'}</td>
-                  <td>${payment.amount?.toLocaleString()}</td>
-                  <td>{new Date(payment.paymentDate).toLocaleDateString()}</td>
-                  <td>{payment.payerName || 'Not specified'}</td>
+                  <td>{payment.amount?.toLocaleString()} VND</td>
+                  <td>{new Date(payment.paymentDate).toLocaleDateString('vi-VN')}</td>
+                  <td>{payment.payerName || 'Không xác định'}</td>
                   <td>
                     {payment.isRefunded ? (
-                      <span className="text-danger">Refunded</span>
+                      <span className="text-danger">Đã hoàn tiền</span>
                     ) : (
-                      <span className="text-success">Paid</span>
+                      <span className="text-success">Đã thanh toán</span>
                     )}
                   </td>
                   <td>
@@ -174,7 +174,7 @@ const PaymentListScreen = () => {
                         className="btn-sm mx-1"
                         onClick={() => handleRefund(payment._id)}
                       >
-                        <i className="fas fa-undo"></i> Refund
+                        <i className="fas fa-undo"></i> Hoàn tiền
                       </Button>
                     )}
                   </td>
@@ -183,7 +183,7 @@ const PaymentListScreen = () => {
             </tbody>
           </Table>
           {filteredPayments.length === 0 && (
-            <Message>No payments found</Message>
+            <Message>Không tìm thấy khoản thanh toán nào</Message>
           )}
         </>
       )}

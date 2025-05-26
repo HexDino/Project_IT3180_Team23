@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Row, Col, Form, InputGroup } from 'react-bootstrap';
+import { Table, Button, Row, Col, Card } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
 import AuthContext from '../context/AuthContext';
@@ -11,14 +11,15 @@ const FeeListScreen = () => {
   const [fees, setFees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   
-  const navigate = useNavigate();
   const { userInfo } = useContext(AuthContext);
+  
+  // Check if user is admin
+  const isAdmin = userInfo && userInfo.role === 'admin';
   
   useEffect(() => {
     fetchFees();
-  }, [userInfo]);
+  }, []);
   
   const fetchFees = async () => {
     try {
@@ -38,14 +39,14 @@ const FeeListScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load fees'
+          : 'Không thể tải danh sách phí'
       );
       setLoading(false);
     }
   };
   
-  const deleteHandler = async (id) => {
-    if (window.confirm('Are you sure you want to delete this fee?')) {
+  const deleteFeeHandler = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa khoản phí này không?')) {
       try {
         setLoading(true);
         
@@ -62,119 +63,114 @@ const FeeListScreen = () => {
         setError(
           error.response && error.response.data.message
             ? error.response.data.message
-            : 'Failed to delete fee'
+            : 'Không thể xóa khoản phí'
         );
         setLoading(false);
       }
     }
   };
   
-  const filteredFees = fees.filter(
-    (fee) =>
-      fee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fee.feeCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      fee.feeType?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Function to translate fee type into Vietnamese
+  const translateFeeType = (feeType) => {
+    const translations = {
+      'mandatory': 'Bắt buộc',
+      'service': 'Dịch vụ',
+      'maintenance': 'Bảo trì',
+      'voluntary': 'Tự nguyện',
+      'contribution': 'Đóng góp',
+      'parking': 'Đỗ xe',
+      'utilities': 'Tiện ích'
+    };
+    
+    return translations[feeType] || feeType;
+  };
   
   return (
     <>
       <Row className="align-items-center mb-3">
         <Col>
-          <h1>Fees</h1>
+          <h1>Danh Sách Phí</h1>
         </Col>
-        <Col className="text-end">
-          <Button 
-            className="btn-sm"
-            onClick={() => navigate('/fees/create')}
-          >
-            <i className="fas fa-plus"></i> Add Fee
-          </Button>
+        <Col className="text-right">
+          <Link to="/fees/create" className="btn btn-primary">
+            <i className="fas fa-plus"></i> Thêm Phí Mới
+          </Link>
         </Col>
       </Row>
-
-      <Row className="mb-3">
-        <Col md={6}>
-          <InputGroup>
-            <Form.Control
-              type="text"
-              placeholder="Search fees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Button
-              variant="outline-secondary"
-              onClick={() => setSearchTerm('')}
-            >
-              Clear
-            </Button>
-          </InputGroup>
-        </Col>
-      </Row>
-
+      
       {loading ? (
         <Loader />
       ) : error ? (
         <Message variant="danger">{error}</Message>
       ) : (
-        <>
-          <Table striped bordered hover responsive className="table-sm">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Amount</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFees.map((fee) => (
-                <tr key={fee._id}>
-                  <td>{fee.feeCode}</td>
-                  <td>{fee.name}</td>
-                  <td>${fee.amount?.toLocaleString()}</td>
-                  <td>{fee.feeType}</td>
-                  <td>
-                    {fee.active ? (
-                      <span className="text-success">Active</span>
-                    ) : (
-                      <span className="text-danger">Inactive</span>
-                    )}
-                  </td>
-                  <td>{fee.startDate ? new Date(fee.startDate).toLocaleDateString() : 'N/A'}</td>
-                  <td>{fee.endDate ? new Date(fee.endDate).toLocaleDateString() : 'N/A'}</td>
-                  <td>
-                    <LinkContainer to={`/fees/${fee._id}`}>
-                      <Button variant="light" className="btn-sm mx-1">
-                        <i className="fas fa-eye"></i>
-                      </Button>
-                    </LinkContainer>
-                    <LinkContainer to={`/fees/${fee._id}/edit`}>
-                      <Button variant="light" className="btn-sm mx-1">
-                        <i className="fas fa-edit"></i>
-                      </Button>
-                    </LinkContainer>
-                    {userInfo.role === 'admin' && (
-                      <Button
-                        variant="danger"
-                        className="btn-sm mx-1"
-                        onClick={() => deleteHandler(fee._id)}
-                      >
-                        <i className="fas fa-trash"></i>
-                      </Button>
-                    )}
-                  </td>
+        <Card className="shadow">
+          <Card.Body>
+            <Table striped bordered hover responsive className="table-sm">
+              <thead>
+                <tr>
+                  <th>Mã Phí</th>
+                  <th>Tên</th>
+                  <th>Loại</th>
+                  <th>Số Tiền</th>
+                  <th>Ngày Bắt Đầu</th>
+                  <th>Ngày Kết Thúc</th>
+                  <th>Trạng Thái</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-          {filteredFees.length === 0 && (
-            <Message>No fees found</Message>
-          )}
-        </>
+              </thead>
+              <tbody>
+                {fees.map((fee) => (
+                  <tr key={fee._id}>
+                    <td>{fee.feeCode}</td>
+                    <td>{fee.name}</td>
+                    <td>{translateFeeType(fee.feeType)}</td>
+                    <td>{fee.amount.toLocaleString()} VND</td>
+                    <td>
+                      {fee.startDate
+                        ? new Date(fee.startDate).toLocaleDateString('vi-VN')
+                        : 'N/A'}
+                    </td>
+                    <td>
+                      {fee.endDate
+                        ? new Date(fee.endDate).toLocaleDateString('vi-VN')
+                        : 'N/A'}
+                    </td>
+                    <td>
+                      {fee.active ? (
+                        <span className="text-success">
+                          <i className="fas fa-check-circle"></i> Đang kích hoạt
+                        </span>
+                      ) : (
+                        <span className="text-danger">
+                          <i className="fas fa-times-circle"></i> Vô hiệu hóa
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <LinkContainer to={`/fees/${fee._id}`}>
+                        <Button variant="light" className="btn-sm mx-1">
+                          <i className="fas fa-edit"></i>
+                        </Button>
+                      </LinkContainer>
+                      {isAdmin && (
+                        <Button
+                          variant="danger"
+                          className="btn-sm mx-1"
+                          onClick={() => deleteFeeHandler(fee._id)}
+                        >
+                          <i className="fas fa-trash"></i>
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            {fees.length === 0 && (
+              <Message>Không tìm thấy khoản phí nào</Message>
+            )}
+          </Card.Body>
+        </Card>
       )}
     </>
   );

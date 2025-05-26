@@ -54,7 +54,7 @@ const HouseholdEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load household details'
+          : 'Không thể tải thông tin hộ gia đình'
       );
       setLoading(false);
     }
@@ -64,17 +64,17 @@ const HouseholdEditScreen = () => {
     const errors = {};
     
     if (!householdCode.trim()) {
-      errors.householdCode = 'Household code is required';
+      errors.householdCode = 'Mã hộ gia đình là bắt buộc';
     } else if (householdCode.length < 3) {
-      errors.householdCode = 'Household code must be at least 3 characters';
+      errors.householdCode = 'Mã hộ gia đình phải có ít nhất 3 ký tự';
     }
     
     if (!apartmentNumber.trim()) {
-      errors.apartmentNumber = 'Apartment number is required';
+      errors.apartmentNumber = 'Số căn hộ là bắt buộc';
     }
     
     if (!address.trim()) {
-      errors.address = 'Address is required';
+      errors.address = 'Địa chỉ là bắt buộc';
     }
     
     setValidationErrors(errors);
@@ -124,7 +124,7 @@ const HouseholdEditScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : `Failed to ${isEditMode ? 'update' : 'create'} household`
+          : `Không thể ${isEditMode ? 'cập nhật' : 'tạo'} hộ gia đình`
       );
       setLoading(false);
     }
@@ -133,26 +133,26 @@ const HouseholdEditScreen = () => {
   return (
     <>
       <Link to='/households' className='btn btn-light my-3'>
-        <i className="fas fa-arrow-left"></i> Go Back
+        <i className="fas fa-arrow-left"></i> Quay lại
       </Link>
       
       <FormContainer>
-        <h1>{isEditMode ? 'Edit Household' : 'Create Household'}</h1>
+        <h1>{isEditMode ? 'Chỉnh Sửa Hộ Gia Đình' : 'Thêm Hộ Gia Đình Mới'}</h1>
         
         {error && <Message variant='danger'>{error}</Message>}
         {success && (
           <Message variant='success'>
-            Household successfully {isEditMode ? 'updated' : 'created'}!
+            Hộ gia đình đã được {isEditMode ? 'cập nhật' : 'tạo'} thành công!
           </Message>
         )}
         {loading && <Loader />}
         
         <Form onSubmit={submitHandler} noValidate>
           <Form.Group controlId='householdCode' className='mb-3'>
-            <Form.Label>Household Code</Form.Label>
+            <Form.Label>Mã Hộ Gia Đình</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter household code'
+              placeholder='Nhập mã hộ gia đình'
               value={householdCode}
               onChange={(e) => setHouseholdCode(e.target.value)}
               isInvalid={!!validationErrors.householdCode}
@@ -164,10 +164,10 @@ const HouseholdEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='apartmentNumber' className='mb-3'>
-            <Form.Label>Apartment Number</Form.Label>
+            <Form.Label>Số Căn Hộ</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter apartment number'
+              placeholder='Nhập số căn hộ'
               value={apartmentNumber}
               onChange={(e) => setApartmentNumber(e.target.value)}
               isInvalid={!!validationErrors.apartmentNumber}
@@ -179,10 +179,10 @@ const HouseholdEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='address' className='mb-3'>
-            <Form.Label>Address</Form.Label>
+            <Form.Label>Địa Chỉ</Form.Label>
             <Form.Control
               type='text'
-              placeholder='Enter address'
+              placeholder='Nhập địa chỉ'
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               isInvalid={!!validationErrors.address}
@@ -194,11 +194,11 @@ const HouseholdEditScreen = () => {
           </Form.Group>
           
           <Form.Group controlId='note' className='mb-3'>
-            <Form.Label>Note</Form.Label>
+            <Form.Label>Ghi Chú</Form.Label>
             <Form.Control
               as='textarea'
               rows={3}
-              placeholder='Enter note (optional)'
+              placeholder='Nhập ghi chú (không bắt buộc)'
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -208,7 +208,7 @@ const HouseholdEditScreen = () => {
             <Form.Group controlId='active' className='mb-3'>
               <Form.Check
                 type='checkbox'
-                label='Active'
+                label='Đang hoạt động'
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
               />
@@ -216,7 +216,7 @@ const HouseholdEditScreen = () => {
           )}
           
           <Button type='submit' variant='primary' className='mt-3'>
-            {isEditMode ? 'Update' : 'Create'}
+            {isEditMode ? 'Cập Nhật' : 'Tạo Mới'}
           </Button>
         </Form>
       </FormContainer>
