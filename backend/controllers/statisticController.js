@@ -4,6 +4,7 @@ const Fee = require('../models/feeModel');
 const Payment = require('../models/paymentModel');
 const TemporaryResidence = require('../models/temporaryResidenceModel');
 const TemporaryAbsence = require('../models/temporaryAbsenceModel');
+const asyncHandler = require('express-async-handler');
 
 // @desc    Get dashboard statistics
 // @route   GET /api/statistics/dashboard
@@ -25,7 +26,7 @@ exports.getDashboardStats = async (req, res) => {
     currentMonthEnd.setDate(0);
     currentMonthEnd.setHours(23, 59, 59, 999);
     
-    // Lấy các khoản thanh toán của tháng hiện tại (đã thanh toán và chưa hoàn tiền)
+    // Lấy các khoản thanh toán của tháng hiện tại
     console.log("Tháng hiện tại: ", {
       start: currentMonthStart,
       end: currentMonthEnd
@@ -36,7 +37,7 @@ exports.getDashboardStats = async (req, res) => {
         $gte: currentMonthStart, 
         $lte: currentMonthEnd 
       },
-      isRefunded: false
+      status: 'paid'
     }).populate('fee', 'name feeType');
     
     console.log("Số lượng thanh toán tháng này: ", paymentsThisMonth.length);
@@ -92,7 +93,7 @@ exports.getDashboardStats = async (req, res) => {
     
     // Get most recent payments (ưu tiên thanh toán trong tháng hiện tại)
     const recentPayments = await Payment.find({
-      isRefunded: false
+      status: 'paid'
     })
       .populate('household', 'householdCode apartmentNumber')
       .populate('fee', 'name type feeType')
@@ -144,10 +145,10 @@ const getMonthlyRevenueTrend = async () => {
   sixMonthsAgo.setDate(1);
   sixMonthsAgo.setHours(0, 0, 0, 0);
   
-  // Lấy toàn bộ thanh toán trong 6 tháng gần nhất (đã thanh toán và chưa hoàn tiền)
+  // Lấy toàn bộ thanh toán trong 6 tháng gần nhất (đã thanh toán)
   const payments = await Payment.find({
     paymentDate: { $gte: sixMonthsAgo },
-    isRefunded: false
+    status: 'paid'
   });
   
   // Tính tổng doanh thu theo từng tháng
@@ -187,7 +188,7 @@ exports.getPaymentStatus = async (req, res) => {
     
     // Get all payments
     const payments = await Payment.find({ 
-      isRefunded: false,
+      status: 'paid',
       fee: { $in: mandatoryFees.map(fee => fee._id) }
     });
     
@@ -242,7 +243,7 @@ exports.getMonthlyReport = async (req, res) => {
     // Get payments for the specified month
     const payments = await Payment.find({
       paymentDate: { $gte: startDate, $lte: endDate },
-      isRefunded: false
+      status: 'paid'
     })
       .populate('fee', 'name type amount')
       .populate('household', 'householdCode apartmentNumber')
@@ -334,4 +335,133 @@ const translateFeeName = (feeName) => {
   };
   
   return feeTranslations[feeName] || feeName;
-}; 
+};
+
+// Get total payment by month/year
+const getTotalPaymentsByMonth = asyncHandler(async (req, res) => {
+  const { year } = req.params;
+  const currentYear = parseInt(year) || new Date().getFullYear();
+
+  const result = await Payment.aggregate([
+    {
+      $match: {
+        status: 'paid',
+        paymentDate: {
+          $gte: new Date(`${currentYear}-01-01`),
+          $lte: new Date(`${currentYear}-12-31`)
+        }
+      }
+    },
+    {
+      $group: {
+        _id: { $month: '$paymentDate' },
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { _id: 1 }
+    }
+  ]);
+
+  // Fill in missing months with 0
+  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1;
+    const found = result.find(r => r._id === month);
+    return {
+      month,
+      total: found ? found.total : 0,
+      count: found ? found.count : 0
+    };
+  });
+
+  res.json(monthlyData);
+});
+
+// Get payment statistics by payment method
+const getPaymentStatsByMethod = asyncHandler(async (req, res) => {
+  const result = await Payment.aggregate([
+    {
+      $match: {
+        status: 'paid'
+      }
+    },
+    {
+      $group: {
+        _id: '$method',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  res.json(result);
+});
+
+// Get payment statistics by fee type
+const getPaymentStatsByFeeType = asyncHandler(async (req, res) => {
+  const result = await Payment.aggregate([
+    {
+      $match: {
+        status: 'paid'
+      }
+    },
+    {
+      $lookup: {
+        from: 'fees',
+        localField: 'fee',
+        foreignField: '_id',
+        as: 'feeDetails'
+      }
+    },
+    {
+      $unwind: '$feeDetails'
+    },
+    {
+      $group: {
+        _id: '$feeDetails.feeType',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  res.json(result);
+});
+
+// Get payment statistics by month for dashboard
+const getMonthlyPaymentStats = asyncHandler(async (req, res) => {
+  const today = new Date();
+  const lastSixMonths = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+
+  const result = await Payment.aggregate([
+    {
+      $match: {
+        status: 'paid',
+        paymentDate: { $gte: lastSixMonths }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$paymentDate' },
+          month: { $month: '$paymentDate' }
+        },
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
+    }
+  ]);
+
+  // Transform result into usable format
+  const monthlyStats = result.map(item => ({
+    month: `${item._id.month}/${item._id.year}`,
+    total: item.total,
+    count: item.count
+  }));
+
+  res.json(monthlyStats);
+}); 

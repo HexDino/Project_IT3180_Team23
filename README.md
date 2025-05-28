@@ -1,152 +1,207 @@
-# BlueMoon Apartment Management System
+# 🏢 Blue Moon Apartment Management System
 
-Hệ thống quản lý chung cư BlueMoon - Một giải pháp toàn diện để quản lý phí, cư dân và hộ gia đình.
+Hệ thống quản lý chung cư Blue Moon - Dự án IT3180 Team 23
 
-## 🌟 Tính năng chính
+## 📋 Mô tả dự án
 
-- **Quản lý hộ gia đình**: Đăng ký và quản lý thông tin hộ gia đình
-- **Quản lý cư dân**: Theo dõi cư dân và thông tin chi tiết
-- **Quản lý phí**: Định nghĩa các loại phí khác nhau (bắt buộc, tự nguyện, đỗ xe, tiện ích)
-- **Theo dõi thanh toán**: Ghi nhận và giám sát tình trạng thanh toán
-- **Dashboard phân tích**: Hiển thị trực quan doanh thu theo loại phí và xu hướng hàng tháng
-- **Tạm trú/Tạm vắng**: Xử lý cư dân tạm trú và tạm vắng
-- **Xác thực người dùng**: Hệ thống đăng nhập bảo mật cho quản trị viên
+Hệ thống quản lý chung cư toàn diện được xây dựng bằng MERN Stack (MongoDB, Express, React, Node.js) để quản lý:
+- Hộ gia đình và cư dân
+- Các loại phí (quản lý, gửi xe, đóng góp)
+- Thanh toán và doanh thu
+- Báo cáo thống kê
+
+## 🚀 Tính năng chính
+
+### 👤 Quản lý người dùng
+- Đăng nhập/đăng xuất
+- Phân quyền: Admin, Manager, Staff, Accountant
+- Quản lý thông tin cá nhân
+
+### 🏠 Quản lý hộ gia đình
+- Thêm/sửa/xóa hộ gia đình
+- Quản lý thông tin căn hộ
+- Theo dõi cư dân
+
+### 👥 Quản lý cư dân
+- Đăng ký cư dân mới
+- Cập nhật thông tin
+- Quản lý tạm trú/tạm vắng
+
+### 💰 Quản lý phí và thanh toán
+- Tạo các loại phí: quản lý hàng tháng, gửi xe, đóng góp
+- Ghi nhận thanh toán
+- Hoàn tiền (Admin/Accountant)
+- Tìm kiếm và lọc thanh toán theo trạng thái
+
+### 📊 Báo cáo và thống kê
+- Dashboard tổng quan
+- Doanh thu theo tháng
+- Biểu đồ xu hướng 6 tháng
+- Thanh toán gần đây
 
 ## 🛠️ Công nghệ sử dụng
 
 ### Backend
-- Node.js với Express.js
-- MongoDB với Mongoose ODM
-- JWT Authentication
-- RESTful API
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - MongoDB ODM
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
 
 ### Frontend
-- React.js với functional components và hooks
-- React Bootstrap cho UI
-- Chart.js cho visualization dữ liệu
-- Axios cho API communication
-- React Router cho navigation
+- **React.js** - UI framework
+- **React Router** - Navigation
+- **React Bootstrap** - UI components
+- **Axios** - HTTP client
+- **Chart.js** - Data visualization
 
-## 🚀 Cài đặt
+## 📦 Cài đặt và chạy dự án
 
 ### Yêu cầu hệ thống
 - Node.js (v14+)
-- MongoDB
+- MongoDB (v4.4+)
 - npm hoặc yarn
 
-### Hướng dẫn cài đặt
+### 1. Clone repository
+```bash
+git clone [repository-url]
+cd Project_IT3180_Team23
+```
 
-1. **Clone repository**
-   ```bash
-   git clone <repository-url>
-   cd bluemoon-apartment-management
-   ```
+### 2. Cài đặt Backend
+```bash
+cd backend
+npm install
+```
 
-2. **Cài đặt dependencies**
-   ```bash
-   # Cài đặt backend
-   cd backend
-   npm install
-   
-   # Cài đặt frontend  
-   cd ../frontend
-   npm install
-   ```
+### 3. Cài đặt Frontend
+```bash
+cd ../frontend
+npm install
+```
 
-3. **Cấu hình môi trường**
-   
-   Tạo file `.env` trong thư mục backend:
-   ```env
-   NODE_ENV=development
-   PORT=5000
-   MONGO_URI=mongodb://localhost:27017/bluemoon_apartment
-   JWT_SECRET=your_jwt_secret_key
-   JWT_EXPIRE=30d
-   ```
+### 4. Khởi động MongoDB
+```bash
+# Với Docker
+docker run --name bluemoon-mongo -p 27017:27017 -d mongo
 
-4. **Khởi động MongoDB**
-   ```bash
-   mongod
-   ```
+# Hoặc khởi động MongoDB service local
+mongod
+```
 
-5. **Tạo dữ liệu mẫu**
-   ```bash
-   cd backend
-   
-   # Tạo admin user
-   node createAdminUser.js
-   
-   # Tạo dữ liệu test cơ bản
-   node seeders/createTestData.js
-   
-   # Tạo dữ liệu mẫu lớn (tùy chọn)
-   node scripts/createMassiveTestData.js
-   ```
+### 5. Cấu hình môi trường
+Tạo file `.env` trong thư mục `backend`:
+```env
+NODE_ENV=development
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/bluemoon_apartment
+JWT_SECRET=your_jwt_secret_here
+```
 
-6. **Chạy ứng dụng**
-   ```bash
-   # Backend (port 5000)
-   cd backend
-   npm run dev
-   
-   # Frontend (port 3000) - terminal khác
-   cd frontend
-   npm start
-   ```
+### 6. Tạo dữ liệu mẫu (tùy chọn)
+```bash
+cd backend
+node createAdminUser.js
+node createTestUsers.js
+node createMassiveTestData.js
+```
 
-Truy cập ứng dụng tại `http://localhost:3000`
+### 7. Chạy ứng dụng
 
-## 🔐 Tài khoản mặc định
+#### Backend (Port 5000)
+```bash
+cd backend
+npm run dev
+```
 
-- **Username**: admin
-- **Password**: admin123
+#### Frontend (Port 3000)
+```bash
+cd frontend
+npm start
+```
+
+## 👤 Tài khoản mặc định
+
+- **Username:** admin
+- **Password:** admin123
+- **Role:** admin
 
 ## 📊 Dữ liệu mẫu
 
-Hệ thống bao gồm script tạo dữ liệu mẫu phong phú:
-- **53 hộ gia đình** (A01-J50)
-- **196 cư dân** (2-5 người/hộ)
-- **9 loại phí** đa dạng
-- **1,334+ thanh toán** trong 6 tháng
-- **Dashboard** với biểu đồ chi tiết
+Khi chạy script tạo dữ liệu, hệ thống sẽ có:
+- 53 hộ gia đình
+- 187 cư dân
+- 1,040 thanh toán
+- 4 loại phí khác nhau
+- 6 người dùng với các quyền khác nhau
 
-## 🔄 Cấu trúc dự án
+## 🔐 Phân quyền
 
-```
-bluemoon-apartment-management/
-├── backend/
-│   ├── controllers/         # Logic xử lý
-│   ├── models/             # Database models
-│   ├── routes/             # API routes
-│   ├── middleware/         # Middleware
-│   ├── scripts/            # Scripts tiện ích
-│   ├── seeders/            # Dữ liệu mẫu
-│   └── server.js           # Entry point
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── screens/        # Page components
-│   │   ├── context/        # React context
-│   │   └── App.js
-│   └── public/
-└── README.md
-```
+| Vai trò | Quyền hạn |
+|---------|-----------|
+| **Admin** | Toàn quyền hệ thống |
+| **Manager** | Quản lý hộ gia đình, cư dân |
+| **Staff** | Xem thông tin, ghi nhận thanh toán |
+| **Accountant** | Quản lý phí, thanh toán, hoàn tiền |
 
-## 🌐 API Endpoints
+## 📱 Giao diện
 
-### Dashboard
-- `GET /api/statistics/dashboard` - Thống kê dashboard
+- **Dashboard:** Tổng quan hệ thống với biểu đồ
+- **Quản lý hộ gia đình:** Danh sách và chi tiết hộ dân
+- **Quản lý thanh toán:** Tìm kiếm, lọc theo trạng thái
+- **Báo cáo:** Thống kê doanh thu và biểu đồ
 
-### Authentication  
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/register` - Đăng ký
+## 🌟 Tính năng nổi bật
 
-### Quản lý
-- `GET/POST/PUT/DELETE /api/households` - Hộ gia đình
-- `GET/POST/PUT/DELETE /api/residents` - Cư dân
-- `GET/POST/PUT/DELETE /api/fees` - Phí
-- `GET/POST/PUT/DELETE /api/payments` - Thanh toán
+### Tìm kiếm thông minh
+- Tìm kiếm thanh toán theo nhiều tiêu chí
+- Lọc theo trạng thái: Đã thanh toán, Chưa thanh toán, Quá hạn, Đã hoàn tiền
 
-## 📝 License
+### Dashboard thông minh
+- Hiển thị **chỉ** các khoản phí đã thanh toán gần đây
+- Biểu đồ doanh thu theo loại phí
+- Xu hướng 6 tháng
 
-MIT License 
+### Hoàn tiền
+- Chức năng hoàn tiền cho Admin/Accountant
+- Ghi nhận người thực hiện và thời gian hoàn tiền
+
+### Giao diện Việt hóa
+- Toàn bộ giao diện bằng tiếng Việt
+- Định dạng tiền tệ VND
+- Ngày tháng theo chuẩn Việt Nam
+
+## 🔧 API Endpoints
+
+### Authentication
+- `POST /api/users/login` - Đăng nhập
+- `GET /api/users/profile` - Thông tin user
+
+### Payments
+- `GET /api/payments` - Danh sách thanh toán
+- `GET /api/payments/:id` - Chi tiết thanh toán
+- `PUT /api/payments/:id/refund` - Hoàn tiền
+- `GET /api/payments/search` - Tìm kiếm thanh toán
+
+### Statistics
+- `GET /api/statistics/dashboard` - Dữ liệu dashboard
+- `GET /api/statistics/monthly-report` - Báo cáo tháng
+
+## 📈 Dữ liệu thống kê
+
+- **Tổng doanh thu:** 447,340,000 VND
+- **Doanh thu tháng hiện tại:** 67,030,000 VND
+- **Tỷ lệ thanh toán:** 85.8% đã thanh toán
+- **Trạng thái phân bố:**
+  - Đã thanh toán: 892 (85.8%)
+  - Chưa thanh toán: 95 (9.1%)
+  - Quá hạn: 53 (5.1%)
+
+## 👥 Team 23
+
+Dự án được phát triển bởi Team 23 - IT3180
+
+## 📄 License
+
+Dự án giáo dục - IT3180 

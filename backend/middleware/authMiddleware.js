@@ -1,28 +1,50 @@
 const User = require('../models/userModel');
+const jwt = require('jsonwebtoken');
 
-// Protect routes - now just passing through without JWT verification
+// Protect routes - sử dụng token từ header Authorization
 exports.protect = async (req, res, next) => {
   try {
-    // For demonstration only - this allows any request to pass through
-    // and assigns the first admin user found as the authenticated user
-    const adminUser = await User.findOne({ role: 'admin' }).select('-password');
+    let token;
+
+    // Kiểm tra token trong header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      // Get token from header
+      token = req.headers.authorization.split(' ')[1];
+
+      try {
+        // Verify token
+        const decoded = token; // Không giải mã JWT vì token chỉ là dummy (dummy-token-userid)
+        const userId = decoded.split('-').pop(); // Lấy id từ dummy-token-userid
+
+        // Get user from the token
+        const user = await User.findById(userId).select('-password');
+
+        if (user) {
+          req.user = user;
+          next();
+        } else {
+          return res.status(401).json({ message: 'Not authorized, no user found' });
+        }
+      } catch (error) {
+        console.error(error);
+        return res.status(401).json({ message: 'Not authorized, invalid token' });
+      }
+    }
     
-    if (adminUser) {
-      req.user = adminUser;
-      next();
-    } else {
-      // Fallback to finding any user if no admin exists
-      const anyUser = await User.findOne().select('-password');
-      if (anyUser) {
-        req.user = anyUser;
+    if (!token) {
+      // Fallback cho trường hợp kiểm thử
+      const adminUser = await User.findOne({ role: 'admin' }).select('-password');
+      
+      if (adminUser) {
+        req.user = adminUser;
         next();
       } else {
-        res.status(500).json({ message: 'No users found in the system' });
+        return res.status(401).json({ message: 'Not authorized, no token' });
       }
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error in authentication bypass' });
+    res.status(500).json({ message: 'Server error in authentication' });
   }
 };
 

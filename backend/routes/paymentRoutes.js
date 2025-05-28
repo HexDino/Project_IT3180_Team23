@@ -17,7 +17,7 @@ router.use(protect);
 
 router.route('/')
   .get(getPayments)
-  .post(authorize(['admin', 'accountant']), createPayment);
+  .post(authorize('admin', 'accountant'), createPayment);
 
 router.route('/search')
   .get(searchPayments);
@@ -30,6 +30,6 @@ router.route('/fee/:id')
 
 router.route('/:id')
   .get(getPaymentById)
-  .put(authorize(['admin', 'accountant']), updatePayment);
+  .put(authorize('admin', 'accountant'), updatePayment);
 
 module.exports = router; 

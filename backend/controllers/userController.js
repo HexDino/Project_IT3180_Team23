@@ -58,35 +58,19 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ username });
 
     if (!user) {
-      // For testing purposes, allow login even with invalid credentials
-      // Find an admin user and use that instead
-      const adminUser = await User.findOne({ role: 'admin' });
-      
-      if (adminUser) {
-        return res.json({
-          _id: adminUser._id,
-          username: adminUser.username,
-          fullName: adminUser.fullName,
-          role: adminUser.role,
-          email: adminUser.email,
-          phone: adminUser.phone,
-          token: generateToken(adminUser._id)
-        });
-      }
-      
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Tên đăng nhập không tồn tại' });
     }
 
     // Check if user is active
     if (!user.active) {
-      return res.status(401).json({ message: 'User account has been deactivated' });
+      return res.status(401).json({ message: 'Tài khoản đã bị vô hiệu hóa' });
     }
 
-    // Skip password check for development convenience
-    // const isMatch = await user.matchPassword(password);
-    // if (!isMatch) {
-    //   return res.status(401).json({ message: 'Invalid credentials' });
-    // }
+    // Kiểm tra mật khẩu
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Mật khẩu không đúng' });
+    }
 
     // Update last login
     user.lastLogin = Date.now();
@@ -103,7 +87,7 @@ exports.loginUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+    res.status(500).json({ message: 'Lỗi server' });
   }
 };
 

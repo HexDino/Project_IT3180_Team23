@@ -1,53 +1,55 @@
 const mongoose = require('mongoose');
 
-const paymentSchema = new mongoose.Schema({
-  household: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Household',
-    required: [true, 'Household ID is required']
+const paymentSchema = mongoose.Schema(
+  {
+    fee: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'Fee'
+    },
+    household: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'Household'
+    },
+    amount: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['pending', 'paid', 'overdue'],
+      default: 'pending'
+    },
+    paymentDate: {
+      type: Date
+    },
+    dueDate: {
+      type: Date
+    },
+    method: {
+      type: String,
+      enum: ['cash', 'bank_transfer', 'card', 'other'],
+      default: 'cash'
+    },
+    collector: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    note: {
+      type: String
+    }
   },
-  fee: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Fee',
-    required: [true, 'Fee ID is required']
-  },
-  amount: {
-    type: Number,
-    required: [true, 'Amount is required'],
-    min: [0, 'Amount must be at least 0']
-  },
-  paymentDate: {
-    type: Date,
-    default: Date.now
-  },
-  payerName: {
-    type: String
-  },
-  payerId: {
-    type: String
-  },
-  payerPhone: {
-    type: String
-  },
-  collector: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  note: {
-    type: String
-  },
-  receiptNumber: {
-    type: String
-  },
-  isRefunded: {
-    type: Boolean,
-    default: false
+  {
+    timestamps: true
   }
-}, {
-  timestamps: true
-});
+);
 
-// Create a compound index to prevent duplicate payments
-paymentSchema.index({ household: 1, fee: 1, paymentDate: 1 }, { unique: true });
+// Ensure uniqueness of fee-household combination
+paymentSchema.index({ fee: 1, household: 1 }, { unique: true });
 
-module.exports = mongoose.model('Payment', paymentSchema); 
+const Payment = mongoose.model('Payment', paymentSchema);
+
+module.exports = Payment; 

@@ -3,6 +3,7 @@ const Household = require('../models/householdModel');
 const Resident = require('../models/residentModel');
 const Payment = require('../models/paymentModel');
 const Fee = require('../models/feeModel');
+const User = require('../models/userModel');
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/bluemoon_apartment', {
@@ -131,14 +132,17 @@ const createMassiveTestData = async () => {
           const variance = 0.7 + Math.random() * 0.6; // 0.7 - 1.3
           const amount = Math.floor((baseAmount * variance) / 10000) * 10000;
 
+          // Tạo status cho thanh toán
+          const status = Math.random() < 0.9 ? 'paid' : Math.random() < 0.5 ? 'pending' : 'overdue';
+
           paymentsToCreate.push({
             household: household._id,
             fee: fee._id,
             amount: amount,
             paymentDate: paymentDate,
-            paymentMethod: ['cash', 'bank_transfer', 'credit_card'][Math.floor(Math.random() * 3)],
-            isRefunded: Math.random() < 0.02, // 2% bị hoàn tiền
-            description: `Thanh toán ${fee.name} tháng ${paymentMonth.getMonth() + 1}/${paymentMonth.getFullYear()}`
+            method: ['cash', 'bank_transfer', 'card', 'other'][Math.floor(Math.random() * 4)],
+            status: status,
+            note: `Thanh toán ${fee.name} tháng ${paymentMonth.getMonth() + 1}/${paymentMonth.getFullYear()}`
           });
         }
       }
@@ -171,7 +175,7 @@ const createMassiveTestData = async () => {
     
     const finalHouseholdCount = await Household.countDocuments({ active: true });
     const finalResidentCount = await Resident.countDocuments({ active: true });
-    const finalPaymentCount = await Payment.countDocuments({ isRefunded: false });
+    const finalPaymentCount = await Payment.countDocuments({ status: 'paid' });
     const finalFeeCount = await Fee.countDocuments({ active: true });
     
     console.log(`🏠 Tổng số hộ gia đình: ${finalHouseholdCount}`);
@@ -191,7 +195,7 @@ const createMassiveTestData = async () => {
 
     const currentMonthPayments = await Payment.find({
       paymentDate: { $gte: currentMonthStart, $lte: currentMonthEnd },
-      isRefunded: false
+      status: 'paid'
     });
 
     const currentMonthRevenue = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -209,3 +213,72 @@ const createMassiveTestData = async () => {
 
 // Chạy script
 createMassiveTestData(); 
+
+// Create payments for each fee and household
+const createPayments = async () => {
+  console.log('Creating payments...');
+  
+  // Delete existing payments
+  await Payment.deleteMany({});
+  
+  const fees = await Fee.find({});
+  const households = await Household.find({});
+  const collectors = await User.find({ role: { $in: ['admin', 'accountant'] } });
+  
+  let count = 0;
+  const paymentPromises = [];
+  
+  // For each fee
+  for (const fee of fees) {
+    // Determine which households should have this fee based on probability
+    const selectedHouseholds = households.filter(() => Math.random() < 0.8); // 80% of households get each fee
+    
+    // For each selected household
+    for (const household of selectedHouseholds) {
+      // Generate payment status (70% paid, 20% pending, 10% overdue)
+      const statusRandom = Math.random();
+      const status = statusRandom < 0.7 ? 'paid' : statusRandom < 0.9 ? 'pending' : 'overdue';
+      
+      // Generate payment date
+      let paymentDate = null;
+      if (status === 'paid') {
+        // If paid, set a random payment date within the last year
+        const daysAgo = Math.floor(Math.random() * 365);
+        paymentDate = new Date();
+        paymentDate.setDate(paymentDate.getDate() - daysAgo);
+      }
+      
+      // Choose a random collector from admins/accountants
+      const randomCollector = collectors[Math.floor(Math.random() * collectors.length)];
+      
+      // Generate random payment method
+      const methods = ['cash', 'bank_transfer', 'card', 'other'];
+      const method = methods[Math.floor(Math.random() * methods.length)];
+      
+      // Create payment object
+      const paymentData = {
+        fee: fee._id,
+        household: household._id,
+        amount: fee.amount,
+        status,
+        method,
+        collector: randomCollector._id,
+        note: `Test payment for ${fee.name}`
+      };
+      
+      if (paymentDate) {
+        paymentData.paymentDate = paymentDate;
+      }
+      
+      const payment = new Payment(paymentData);
+      paymentPromises.push(payment.save());
+      count++;
+    }
+  }
+  
+  await Promise.all(paymentPromises);
+  const finalPaymentCount = await Payment.countDocuments();
+  console.log(`Created ${finalPaymentCount} payments`);
+  
+  return finalPaymentCount;
+}; 

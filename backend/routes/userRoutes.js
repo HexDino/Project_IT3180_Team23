@@ -21,6 +21,19 @@ router.route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 
+// Thêm route kiểm tra token
+router.get('/check-token', protect, (req, res) => {
+  res.json({
+    message: 'Token hợp lệ',
+    user: {
+      _id: req.user._id,
+      username: req.user.username,
+      role: req.user.role,
+      fullName: req.user.fullName
+    }
+  });
+});
+
 // Admin only routes
 router.route('/')
   .post(protect, authorize('admin'), registerUser)

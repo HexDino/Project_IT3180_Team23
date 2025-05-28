@@ -6,18 +6,21 @@ import Message from '../components/Message';
 import Loader from '../components/Loader';
 import AuthContext from '../context/AuthContext';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { Badge } from 'react-bootstrap';
 
 const PaymentListScreen = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   
   const navigate = useNavigate();
   const { userInfo } = useContext(AuthContext);
   
   // Check if user is admin
-  const isAdmin = userInfo && userInfo.role === 'admin';
+  const isAdmin = userInfo && (userInfo.role === 'admin' || userInfo.role === 'accountant');
   
   useEffect(() => {
     fetchPayments();
@@ -74,15 +77,24 @@ const PaymentListScreen = () => {
   const filteredPayments = payments.filter(
     (payment) => {
       const searchLower = searchTerm.toLowerCase();
-      return (
+      const matchesSearch = (
         payment.household?.householdCode?.toLowerCase().includes(searchLower) ||
         payment.household?.apartmentNumber?.toLowerCase().includes(searchLower) ||
         payment.fee?.name?.toLowerCase().includes(searchLower) ||
         payment.receiptNumber?.toLowerCase().includes(searchLower) ||
         (payment.payerName && payment.payerName.toLowerCase().includes(searchLower))
       );
+      
+      const matchesStatus = statusFilter === '' || payment.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
     }
   );
+  
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchPayments();
+  };
   
   return (
     <>
@@ -101,7 +113,7 @@ const PaymentListScreen = () => {
       </Row>
 
       <Row className="mb-3">
-        <Col md={6}>
+        <Col md={4}>
           <InputGroup>
             <Form.Control
               type="text"
@@ -117,6 +129,28 @@ const PaymentListScreen = () => {
             </Button>
           </InputGroup>
         </Col>
+        <Col md={3}>
+          <Form.Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="paid">Đã thanh toán</option>
+            <option value="pending">Chưa thanh toán</option>
+            <option value="overdue">Quá hạn</option>
+          </Form.Select>
+        </Col>
+        <Col md={2}>
+          <Button
+            variant="outline-secondary"
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('');
+            }}
+          >
+            Xóa tất cả
+          </Button>
+        </Col>
       </Row>
 
       {loading ? (
@@ -128,55 +162,69 @@ const PaymentListScreen = () => {
           <Table striped bordered hover responsive className="table-sm">
             <thead>
               <tr>
-                <th>Mã Biên Lai</th>
-                <th>Hộ Gia Đình</th>
                 <th>Loại Phí</th>
+                <th>Căn Hộ</th>
                 <th>Số Tiền</th>
-                <th>Ngày Thanh Toán</th>
-                <th>Người Thanh Toán</th>
-                <th>Trạng Thái</th>
+                <th>Phương thức</th>
+                <th>Trạng thái</th>
+                <th>Ngày thanh toán</th>
+                <th>Ghi chú</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {filteredPayments.map((payment) => (
                 <tr key={payment._id}>
-                  <td>{payment.receiptNumber || 'N/A'}</td>
                   <td>
-                    {payment.household ? (
-                      <>
-                        {payment.household.householdCode} - {payment.household.apartmentNumber}
-                      </>
-                    ) : (
-                      'N/A'
-                    )}
-                  </td>
-                  <td>{payment.fee ? payment.fee.name : 'N/A'}</td>
-                  <td>{payment.amount?.toLocaleString()} VND</td>
-                  <td>{new Date(payment.paymentDate).toLocaleDateString('vi-VN')}</td>
-                  <td>{payment.payerName || 'Không xác định'}</td>
-                  <td>
-                    {payment.isRefunded ? (
-                      <span className="text-danger">Đã hoàn tiền</span>
-                    ) : (
-                      <span className="text-success">Đã thanh toán</span>
-                    )}
+                    <Link to={`/payments/${payment._id}`}>
+                      {payment.fee ? payment.fee.name : 'N/A'}
+                    </Link>
                   </td>
                   <td>
-                    <LinkContainer to={`/payments/${payment._id}`}>
-                      <Button variant="light" className="btn-sm mx-1">
-                        <i className="fas fa-eye"></i>
-                      </Button>
-                    </LinkContainer>
-                    {!payment.isRefunded && isAdmin && (
-                      <Button
-                        variant="warning"
-                        className="btn-sm mx-1"
-                        onClick={() => handleRefund(payment._id)}
-                      >
-                        <i className="fas fa-undo"></i> Hoàn tiền
-                      </Button>
-                    )}
+                    {payment.household
+                      ? payment.household.apartmentNumber
+                      : 'N/A'}
+                  </td>
+                  <td>
+                    {payment.amount?.toLocaleString('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    })}
+                  </td>
+                  <td>{payment.method}</td>
+                  <td>
+                    <Badge
+                      bg={
+                        payment.status === 'paid'
+                          ? 'success'
+                          : payment.status === 'overdue'
+                          ? 'danger'
+                          : 'warning'
+                      }
+                    >
+                      {payment.status === 'paid'
+                        ? 'Đã thanh toán'
+                        : payment.status === 'overdue'
+                        ? 'Quá hạn'
+                        : 'Chưa thanh toán'}
+                    </Badge>
+                  </td>
+                  <td>
+                    {payment.paymentDate
+                      ? new Date(payment.paymentDate).toLocaleDateString(
+                          'vi-VN'
+                        )
+                      : 'N/A'}
+                  </td>
+                  <td>{payment.note || 'N/A'}</td>
+                  <td>
+                    <Button
+                      variant="light"
+                      className="btn-sm"
+                      onClick={() => navigate(`/payments/${payment._id}`)}
+                    >
+                      <i className="fas fa-eye"></i>
+                    </Button>
                   </td>
                 </tr>
               ))}

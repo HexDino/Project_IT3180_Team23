@@ -433,7 +433,7 @@ const DashboardScreen = () => {
             <Col md={12}>
               <Card className="mb-4 shadow">
                 <Card.Header className="bg-white">
-                  <h5 className="mb-0">Thanh Toán Gần Đây</h5>
+                  <h5 className="mb-0">Phí Đã Thanh Toán Gần Đây</h5>
                 </Card.Header>
                 <Card.Body>
                   {stats.recentPayments.length === 0 ? (

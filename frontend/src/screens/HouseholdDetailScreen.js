@@ -45,7 +45,7 @@ const HouseholdDetailScreen = () => {
       setError(
         error.response && error.response.data.message
           ? error.response.data.message
-          : 'Failed to load household data'
+          : 'Không thể tải dữ liệu hộ gia đình'
       );
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ const HouseholdDetailScreen = () => {
   return (
     <>
       <Link to='/households' className='btn btn-light my-3'>
-        <i className="fas fa-arrow-left"></i> Back to Households
+        <i className="fas fa-arrow-left"></i> Quay lại Danh sách Hộ dân
       </Link>
       
       {loading ? (
@@ -72,43 +72,43 @@ const HouseholdDetailScreen = () => {
             <Col md={5}>
               <Card className="mb-4">
                 <Card.Header>
-                  <h4>Household Information</h4>
+                  <h4>Thông tin Hộ gia đình</h4>
                 </Card.Header>
                 <Card.Body>
                   <ListGroup variant="flush">
                     <ListGroup.Item>
                       <Row>
-                        <Col md={5}><strong>Code:</strong></Col>
+                        <Col md={5}><strong>Mã hộ:</strong></Col>
                         <Col>{household.householdCode}</Col>
                       </Row>
                     </ListGroup.Item>
                     <ListGroup.Item>
                       <Row>
-                        <Col md={5}><strong>Apartment:</strong></Col>
+                        <Col md={5}><strong>Căn hộ:</strong></Col>
                         <Col>{household.apartmentNumber}</Col>
                       </Row>
                     </ListGroup.Item>
                     <ListGroup.Item>
                       <Row>
-                        <Col md={5}><strong>Address:</strong></Col>
+                        <Col md={5}><strong>Địa chỉ:</strong></Col>
                         <Col>{household.address}</Col>
                       </Row>
                     </ListGroup.Item>
                     <ListGroup.Item>
                       <Row>
-                        <Col md={5}><strong>Status:</strong></Col>
+                        <Col md={5}><strong>Trạng thái:</strong></Col>
                         <Col>
                           {household.active ? (
-                            <span className="text-success">Active</span>
+                            <span className="text-success">Đang hoạt động</span>
                           ) : (
-                            <span className="text-danger">Inactive</span>
+                            <span className="text-danger">Không hoạt động</span>
                           )}
                         </Col>
                       </Row>
                     </ListGroup.Item>
                     <ListGroup.Item>
                       <Row>
-                        <Col md={5}><strong>Created:</strong></Col>
+                        <Col md={5}><strong>Ngày tạo:</strong></Col>
                         <Col>
                           {new Date(household.creationDate).toLocaleDateString()}
                         </Col>
@@ -117,7 +117,7 @@ const HouseholdDetailScreen = () => {
                     {household.note && (
                       <ListGroup.Item>
                         <Row>
-                          <Col md={5}><strong>Note:</strong></Col>
+                          <Col md={5}><strong>Ghi chú:</strong></Col>
                           <Col>{household.note}</Col>
                         </Row>
                       </ListGroup.Item>
@@ -131,7 +131,7 @@ const HouseholdDetailScreen = () => {
                         to={`/households/${household._id}/edit`}
                         className="btn btn-primary btn-sm"
                       >
-                        <i className="fas fa-edit"></i> Edit
+                        <i className="fas fa-edit"></i> Chỉnh sửa
                       </Link>
                     </Col>
                   </Row>
@@ -142,28 +142,28 @@ const HouseholdDetailScreen = () => {
             <Col md={7}>
               <Card className="mb-4">
                 <Card.Header className="d-flex justify-content-between align-items-center">
-                  <h4>Residents ({residents.length})</h4>
+                  <h4>Cư dân ({residents.length})</h4>
                   <Button 
                     variant="success" 
                     size="sm"
                     onClick={handleAddResident}
                   >
-                    <i className="fas fa-plus"></i> Add Resident
+                    <i className="fas fa-plus"></i> Thêm cư dân
                   </Button>
                 </Card.Header>
                 <Card.Body>
                   {residents.length === 0 ? (
                     <Alert variant="info">
-                      No residents in this household. Add a resident to get started.
+                      Không có cư dân trong hộ gia đình này. Hãy thêm cư dân để bắt đầu.
                     </Alert>
                   ) : (
                     <Table striped hover responsive className="table-sm">
                       <thead>
                         <tr>
-                          <th>Name</th>
-                          <th>ID Card</th>
-                          <th>Gender</th>
-                          <th>Status</th>
+                          <th>Họ tên</th>
+                          <th>CCCD/CMND</th>
+                          <th>Giới tính</th>
+                          <th>Trạng thái</th>
                           <th></th>
                         </tr>
                       </thead>
@@ -172,17 +172,17 @@ const HouseholdDetailScreen = () => {
                           <tr key={resident._id}>
                             <td>
                               {resident._id === household.householdHead?._id && (
-                                <i className="fas fa-user-check text-success me-1" title="Household Head"></i>
+                                <i className="fas fa-user-check text-success me-1" title="Chủ hộ"></i>
                               )}
                               {resident.fullName}
                             </td>
                             <td>{resident.idCard || 'N/A'}</td>
-                            <td>{resident.gender}</td>
+                            <td>{resident.gender === 'male' ? 'Nam' : 'Nữ'}</td>
                             <td>
                               {resident.active ? (
-                                <span className="text-success">Active</span>
+                                <span className="text-success">Đang hoạt động</span>
                               ) : (
-                                <span className="text-danger">Inactive</span>
+                                <span className="text-danger">Không hoạt động</span>
                               )}
                             </td>
                             <td>
@@ -206,11 +206,11 @@ const HouseholdDetailScreen = () => {
             <Col>
               <Card className="mb-4">
                 <Card.Header>
-                  <h4>Payment History</h4>
+                  <h4>Lịch sử Thanh toán</h4>
                 </Card.Header>
                 <Card.Body>
                   <Link to={`/payments?household=${household._id}`} className="btn btn-primary">
-                    View Payments
+                    Xem Thanh toán
                   </Link>
                 </Card.Body>
               </Card>
@@ -218,7 +218,7 @@ const HouseholdDetailScreen = () => {
           </Row>
         </>
       ) : (
-        <Message>Household not found</Message>
+        <Message>Không tìm thấy hộ gia đình</Message>
       )}
     </>
   );
