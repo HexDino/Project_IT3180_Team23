@@ -6,7 +6,6 @@ import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 import RoleRoute from './components/RoleRoute';
 import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import HouseholdListScreen from './screens/HouseholdListScreen';
 import HouseholdDetailScreen from './screens/HouseholdDetailScreen';
@@ -19,6 +18,8 @@ import PaymentSearchScreen from './screens/PaymentSearchScreen';
 import PaymentDetailScreen from './screens/PaymentDetailScreen';
 import ResidentListScreen from './screens/ResidentListScreen';
 import ResidentEditScreen from './screens/ResidentEditScreen';
+import UserListScreen from './screens/UserListScreen';
+import UserEditScreen from './screens/UserEditScreen';
 import NotFoundScreen from './screens/NotFoundScreen';
 
 function App() {
@@ -36,7 +37,6 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<LoginScreen />} />
               <Route path="/login" element={<LoginScreen />} />
-              <Route path="/register" element={<RegisterScreen />} />
               
               {/* Basic Protected Routes - Available to all authenticated administrative users */}
               <Route element={<PrivateRoute />}>
@@ -71,7 +71,9 @@ function App() {
               
               {/* Routes accessible only to admin */}
               <Route element={<RoleRoute allowedRoles={adminOnly} />}>
-                <Route path="/admin/users" element={<DashboardScreen />} />
+                <Route path="/users" element={<UserListScreen />} />
+                <Route path="/users/create" element={<UserEditScreen />} />
+                <Route path="/users/:id/edit" element={<UserEditScreen />} />
               </Route>
               
               <Route path="*" element={<NotFoundScreen />} />

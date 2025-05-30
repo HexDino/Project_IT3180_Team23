@@ -29,29 +29,17 @@ const createTestData = async () => {
     // Create households
     const households = [
       {
-        householdCode: 'HH001',
         apartmentNumber: 'A101',
-        owner: 'Nguyen Van A',
-        phone: '0123456789',
-        totalMembers: 4,
         address: 'Tòa nhà A, tầng 1, căn 01',
         active: true
       },
       {
-        householdCode: 'HH002',
         apartmentNumber: 'B202',
-        owner: 'Tran Thi B',
-        phone: '0987654321',
-        totalMembers: 3,
         address: 'Tòa nhà B, tầng 2, căn 02',
         active: true
       },
       {
-        householdCode: 'HH003',
         apartmentNumber: 'C303',
-        owner: 'Le Van C',
-        phone: '0369852147',
-        totalMembers: 5,
         address: 'Tòa nhà C, tầng 3, căn 03',
         active: true
       }
@@ -62,7 +50,7 @@ const createTestData = async () => {
       const newHousehold = new Household(household)
       const savedHousehold = await newHousehold.save()
       createdHouseholds.push(savedHousehold)
-      console.log(`Created household: ${household.householdCode}`)
+      console.log(`Created household: ${household.apartmentNumber}`)
     }
 
     // Create residents

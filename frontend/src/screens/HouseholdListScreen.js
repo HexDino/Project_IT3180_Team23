@@ -71,7 +71,6 @@ const HouseholdListScreen = () => {
   
   const filteredHouseholds = households.filter(
     (household) =>
-      household.householdCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       household.apartmentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       household.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -94,7 +93,7 @@ const HouseholdListScreen = () => {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Tìm kiếm theo mã hộ, số căn hộ, hoặc địa chỉ"
+              placeholder="Tìm kiếm theo số căn hộ hoặc địa chỉ"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -119,7 +118,6 @@ const HouseholdListScreen = () => {
           <Table striped bordered hover responsive className="table-sm">
             <thead>
               <tr>
-                <th>Mã Hộ</th>
                 <th>Căn Hộ</th>
                 <th>Địa Chỉ</th>
                 <th>Chủ Hộ</th>
@@ -130,7 +128,6 @@ const HouseholdListScreen = () => {
             <tbody>
               {filteredHouseholds.map((household) => (
                 <tr key={household._id}>
-                  <td>{household.householdCode}</td>
                   <td>{household.apartmentNumber}</td>
                   <td>{household.address}</td>
                   <td>

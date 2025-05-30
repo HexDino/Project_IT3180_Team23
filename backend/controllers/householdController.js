@@ -41,17 +41,16 @@ exports.getHouseholdById = async (req, res) => {
 // @access  Private/Admin
 exports.createHousehold = async (req, res) => {
   try {
-    const { householdCode, apartmentNumber, address, note } = req.body;
+    const { apartmentNumber, address, note } = req.body;
     
     // Check if household already exists
-    const householdExists = await Household.findOne({ householdCode });
+    const householdExists = await Household.findOne({ apartmentNumber });
     
     if (householdExists) {
-      return res.status(400).json({ message: 'Household with this code already exists' });
+      return res.status(400).json({ message: 'Household with this apartment number already exists' });
     }
     
     const household = await Household.create({
-      householdCode,
       apartmentNumber,
       address,
       note
@@ -69,7 +68,7 @@ exports.createHousehold = async (req, res) => {
 // @access  Private/Admin
 exports.updateHousehold = async (req, res) => {
   try {
-    const { householdCode, apartmentNumber, address, householdHead, note, active } = req.body;
+    const { apartmentNumber, address, householdHead, note, active } = req.body;
     
     const household = await Household.findById(req.params.id);
     
@@ -77,11 +76,11 @@ exports.updateHousehold = async (req, res) => {
       return res.status(404).json({ message: 'Household not found' });
     }
     
-    // If changing household code, check if it's already in use
-    if (householdCode && householdCode !== household.householdCode) {
-      const codeExists = await Household.findOne({ householdCode });
-      if (codeExists) {
-        return res.status(400).json({ message: 'Household code already in use' });
+    // If changing apartment number, check if it's already in use
+    if (apartmentNumber && apartmentNumber !== household.apartmentNumber) {
+      const apartmentExists = await Household.findOne({ apartmentNumber });
+      if (apartmentExists) {
+        return res.status(400).json({ message: 'Apartment number already in use' });
       }
     }
     
@@ -93,7 +92,6 @@ exports.updateHousehold = async (req, res) => {
       }
     }
     
-    household.householdCode = householdCode || household.householdCode;
     household.apartmentNumber = apartmentNumber || household.apartmentNumber;
     household.address = address || household.address;
     household.householdHead = householdHead || household.householdHead;

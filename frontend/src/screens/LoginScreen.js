@@ -38,7 +38,7 @@ const LoginScreen = () => {
       <Col md={6}>
         <Card className="p-4 shadow">
           <Card.Body>
-            <h2 className="text-center mb-4">Đăng Nhập</h2>
+            <h2 className="text-center mb-4">Đăng nhập</h2>
             
             {error && <Message variant="danger">{error}</Message>}
             {loading && <Loader />}
@@ -72,18 +72,12 @@ const LoginScreen = () => {
                 className="w-100 mt-3"
                 disabled={loading}
               >
-                {loading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
+                {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
               </Button>
-              
-              <div className="text-center mt-3">
-                <div className="mb-2">
-                  Người dùng mới? <Link to="/register">Đăng ký tại đây</Link>
-                </div>
-              </div>
             </Form>
 
             <div className="alert alert-info mt-3">
-              <p className="mb-0"><strong>Tài khoản thử nghiệm:</strong> admin / admin123</p>
+              <p className="mb-0"><strong>Lưu ý:</strong> Tài khoản quản lý chỉ được cấp bởi quản trị viên hệ thống.</p>
             </div>
           </Card.Body>
         </Card>

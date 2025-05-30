@@ -395,7 +395,7 @@ const ResidentEditScreen = () => {
               <option value=''>Không thuộc hộ nào</option>
               {households.map((household) => (
                 <option key={household._id} value={household._id}>
-                  {household.householdCode} - {household.apartmentNumber}
+                  {household.apartmentNumber}
                 </option>
               ))}
             </Form.Select>

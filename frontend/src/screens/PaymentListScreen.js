@@ -78,7 +78,6 @@ const PaymentListScreen = () => {
     (payment) => {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = (
-        payment.household?.householdCode?.toLowerCase().includes(searchLower) ||
         payment.household?.apartmentNumber?.toLowerCase().includes(searchLower) ||
         payment.fee?.name?.toLowerCase().includes(searchLower) ||
         payment.receiptNumber?.toLowerCase().includes(searchLower) ||

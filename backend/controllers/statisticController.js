@@ -95,7 +95,7 @@ exports.getDashboardStats = async (req, res) => {
     const recentPayments = await Payment.find({
       status: 'paid'
     })
-      .populate('household', 'householdCode apartmentNumber')
+      .populate('household', 'apartmentNumber')
       .populate('fee', 'name type feeType')
       .sort({ paymentDate: -1 })
       .limit(10);
@@ -209,7 +209,6 @@ exports.getPaymentStatus = async (req, res) => {
       paymentStatus.push({
         household: {
           _id: household._id,
-          householdCode: household.householdCode,
           apartmentNumber: household.apartmentNumber
         },
         status: unpaidFees.length === 0 ? 'Paid' : 'Unpaid',
@@ -246,7 +245,7 @@ exports.getMonthlyReport = async (req, res) => {
       status: 'paid'
     })
       .populate('fee', 'name type amount')
-      .populate('household', 'householdCode apartmentNumber')
+      .populate('household', 'apartmentNumber')
       .sort({ paymentDate: 1 });
     
     // Calculate totals by fee type

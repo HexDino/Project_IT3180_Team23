@@ -76,7 +76,6 @@ const ResidentListScreen = () => {
         resident.fullName?.toLowerCase().includes(searchLower) ||
         resident.idCard?.toLowerCase().includes(searchLower) ||
         resident.phone?.toLowerCase().includes(searchLower) ||
-        resident.household?.householdCode?.toLowerCase().includes(searchLower) ||
         resident.household?.apartmentNumber?.toLowerCase().includes(searchLower)
       );
     }
@@ -147,7 +146,7 @@ const ResidentListScreen = () => {
                   <td>
                     {resident.household ? (
                       <>
-                        {resident.household.householdCode} - {resident.household.apartmentNumber}
+                        {resident.household.apartmentNumber}
                       </>
                     ) : (
                       'Chưa gán'

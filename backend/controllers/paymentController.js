@@ -9,7 +9,7 @@ const asyncHandler = require('express-async-handler');
 const getPayments = asyncHandler(async (req, res) => {
   const payments = await Payment.find()
     .populate('fee', 'name feeType amount')
-    .populate('household', 'householdCode apartmentNumber')
+    .populate('household', 'apartmentNumber')
     .sort({ paymentDate: -1 });
   
   res.json(payments);
@@ -21,7 +21,7 @@ const getPayments = asyncHandler(async (req, res) => {
 const getPaymentById = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id)
     .populate('fee', 'name feeType amount startDate endDate')
-    .populate('household', 'householdCode apartmentNumber');
+    .populate('household', 'apartmentNumber');
   
   if (!payment) {
     res.status(404);
@@ -88,7 +88,7 @@ const createPayment = asyncHandler(async (req, res) => {
   // Populate the new payment with fee and household details
   const populatedPayment = await Payment.findById(payment._id)
     .populate('fee', 'name feeType amount')
-    .populate('household', 'householdCode apartmentNumber')
+    .populate('household', 'apartmentNumber')
     .populate('collector', 'name');
   
   res.status(201).json(populatedPayment);
@@ -139,7 +139,6 @@ const getPaymentsByFee = asyncHandler(async (req, res) => {
 // @access  Private
 const searchPayments = asyncHandler(async (req, res) => {
   const {
-    householdCode,
     apartmentNumber,
     feeName,
     feeType,
@@ -190,18 +189,11 @@ const searchPayments = asyncHandler(async (req, res) => {
 
   // Execute the query with population
   let query = Payment.find(searchConditions)
-    .populate('household', 'householdCode apartmentNumber')
+    .populate('household', 'apartmentNumber')
     .populate('fee', 'name feeType amount dueDate')
     .sort({ paymentDate: -1 });
 
   let payments = await query;
-
-  // Apply additional filters that require populated data
-  if (householdCode) {
-    payments = payments.filter(payment => 
-      payment.household?.householdCode?.toLowerCase().includes(householdCode.toLowerCase())
-    );
-  }
 
   if (apartmentNumber) {
     payments = payments.filter(payment => 
@@ -224,6 +216,81 @@ const searchPayments = asyncHandler(async (req, res) => {
   res.json(payments);
 });
 
+// @desc    Get fee payment status for a household
+// @route   GET /api/payments/household/:id/fee-status
+// @access  Private
+const getHouseholdFeeStatus = asyncHandler(async (req, res) => {
+  const householdId = req.params.id;
+  
+  // Kiểm tra nếu hộ gia đình tồn tại
+  const household = await Household.findById(householdId);
+  if (!household) {
+    res.status(404);
+    throw new Error('Không tìm thấy hộ gia đình');
+  }
+  
+  // Lấy tất cả các loại phí đang hoạt động
+  const activeFees = await Fee.find({ active: true });
+  
+  // Lấy tất cả các khoản thanh toán của hộ gia đình
+  const householdPayments = await Payment.find({ household: householdId })
+    .populate('fee', 'name feeType amount startDate endDate');
+  
+  // Lấy tháng hiện tại và tháng trước
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  
+  // Kiểm tra quá hạn cho các khoản phí tháng trước
+  const firstDayLastMonth = new Date(lastMonthYear, lastMonth, 1);
+  const lastDayLastMonth = new Date(currentYear, currentMonth, 0);
+  
+  // Kiểm tra các khoản phí tháng hiện tại
+  const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  // Kết quả sẽ chứa trạng thái cho từng loại phí
+  const feeStatus = activeFees.map(fee => {
+    // Tìm khoản thanh toán cho phí này trong tháng hiện tại
+    const currentMonthPayment = householdPayments.find(payment => 
+      payment.fee._id.toString() === fee._id.toString() && 
+      payment.paymentDate >= firstDayCurrentMonth &&
+      payment.paymentDate <= lastDayCurrentMonth
+    );
+    
+    // Tìm khoản thanh toán cho phí này trong tháng trước
+    const lastMonthPayment = householdPayments.find(payment => 
+      payment.fee._id.toString() === fee._id.toString() && 
+      payment.paymentDate >= firstDayLastMonth &&
+      payment.paymentDate <= lastDayLastMonth
+    );
+    
+    // Kiểm tra có khoản nào quá hạn không
+    const isLastMonthOverdue = !lastMonthPayment && fee.startDate <= lastDayLastMonth;
+    
+    return {
+      _id: fee._id,
+      name: fee.name,
+      feeType: fee.feeType,
+      amount: fee.amount,
+      currentMonthStatus: currentMonthPayment ? 'paid' : 'pending',
+      lastMonthStatus: lastMonthPayment ? 'paid' : (isLastMonthOverdue ? 'overdue' : 'not_applicable'),
+      currentMonthPayment: currentMonthPayment || null,
+      lastMonthPayment: lastMonthPayment || null
+    };
+  });
+  
+  res.json({
+    household: {
+      _id: household._id,
+      apartmentNumber: household.apartmentNumber,
+    },
+    feeStatus
+  });
+});
+
 module.exports = {
   getPayments,
   getPaymentById,
@@ -231,5 +298,6 @@ module.exports = {
   updatePayment,
   getPaymentsByHousehold,
   getPaymentsByFee,
-  searchPayments
+  searchPayments,
+  getHouseholdFeeStatus
 }; 

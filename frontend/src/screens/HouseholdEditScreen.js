@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Form, Button, Row, Col, Card } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
@@ -11,7 +11,6 @@ const HouseholdEditScreen = () => {
   const { id } = useParams();
   const isEditMode = !!id;
   
-  const [householdCode, setHouseholdCode] = useState('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
@@ -29,7 +28,7 @@ const HouseholdEditScreen = () => {
     if (isEditMode) {
       fetchHouseholdDetails();
     }
-  }, [id]);
+  }, [id, isEditMode, userInfo]);
   
   const fetchHouseholdDetails = async () => {
     try {
@@ -43,7 +42,6 @@ const HouseholdEditScreen = () => {
       
       const { data } = await axios.get(`/api/households/${id}`, config);
       
-      setHouseholdCode(data.householdCode);
       setApartmentNumber(data.apartmentNumber);
       setAddress(data.address);
       setNote(data.note || '');
@@ -62,12 +60,6 @@ const HouseholdEditScreen = () => {
   
   const validateForm = () => {
     const errors = {};
-    
-    if (!householdCode.trim()) {
-      errors.householdCode = 'Mã hộ gia đình là bắt buộc';
-    } else if (householdCode.length < 3) {
-      errors.householdCode = 'Mã hộ gia đình phải có ít nhất 3 ký tự';
-    }
     
     if (!apartmentNumber.trim()) {
       errors.apartmentNumber = 'Số căn hộ là bắt buộc';
@@ -100,7 +92,6 @@ const HouseholdEditScreen = () => {
       };
       
       const householdData = {
-        householdCode,
         apartmentNumber,
         address,
         note,
@@ -148,21 +139,6 @@ const HouseholdEditScreen = () => {
         {loading && <Loader />}
         
         <Form onSubmit={submitHandler} noValidate>
-          <Form.Group controlId='householdCode' className='mb-3'>
-            <Form.Label>Mã Hộ Gia Đình</Form.Label>
-            <Form.Control
-              type='text'
-              placeholder='Nhập mã hộ gia đình'
-              value={householdCode}
-              onChange={(e) => setHouseholdCode(e.target.value)}
-              isInvalid={!!validationErrors.householdCode}
-              required
-            />
-            <Form.Control.Feedback type='invalid'>
-              {validationErrors.householdCode}
-            </Form.Control.Feedback>
-          </Form.Group>
-          
           <Form.Group controlId='apartmentNumber' className='mb-3'>
             <Form.Label>Số Căn Hộ</Form.Label>
             <Form.Control

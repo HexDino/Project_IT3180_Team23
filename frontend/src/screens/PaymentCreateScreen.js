@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Form, Button, Row, Col } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
 import FormContainer from '../components/FormContainer';
@@ -8,12 +8,20 @@ import AuthContext from '../context/AuthContext';
 import axios from 'axios';
 
 const PaymentCreateScreen = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Lấy query params từ URL
+  const searchParams = new URLSearchParams(location.search);
+  const householdParam = searchParams.get('household');
+  const feeParam = searchParams.get('fee');
+  
   const [households, setHouseholds] = useState([]);
   const [fees, setFees] = useState([]);
   
   // Form fields
-  const [householdId, setHouseholdId] = useState('');
-  const [feeId, setFeeId] = useState('');
+  const [householdId, setHouseholdId] = useState(householdParam || '');
+  const [feeId, setFeeId] = useState(feeParam || '');
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [payerName, setPayerName] = useState('');
@@ -23,32 +31,42 @@ const PaymentCreateScreen = () => {
   const [note, setNote] = useState('');
   
   // States
-  const [selectedFee, setSelectedFee] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   
-  const navigate = useNavigate();
   const { userInfo } = useContext(AuthContext);
   
-  useEffect(() => {
-    fetchHouseholds();
-    fetchFees();
-  }, []);
-  
-  useEffect(() => {
-    if (feeId) {
-      const fee = fees.find(f => f._id === feeId);
-      if (fee) {
-        setSelectedFee(fee);
-        setAmount(fee.amount);
-      }
-    }
-  }, [feeId, fees]);
-  
-  const fetchHouseholds = async () => {
+  const fetchHouseholdHead = useCallback(async () => {
     try {
+      if (!householdId || !userInfo) return;
+      
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      
+      const { data } = await axios.get(`/api/households/${householdId}/residents`, config);
+      
+      // Tìm chủ hộ hoặc người đầu tiên trong danh sách
+      const householdHead = data.find(resident => resident.isHouseholdHead) || data[0];
+      
+      if (householdHead) {
+        setPayerName(householdHead.fullName || '');
+        setPayerId(householdHead.idCard || '');
+        setPayerPhone(householdHead.phone || '');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải thông tin chủ hộ:', error);
+    }
+  }, [householdId, userInfo]);
+  
+  const fetchHouseholds = useCallback(async () => {
+    try {
+      if (!userInfo) return;
+      
       const config = {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
@@ -60,10 +78,12 @@ const PaymentCreateScreen = () => {
     } catch (error) {
       console.error('Lỗi khi tải danh sách hộ gia đình:', error);
     }
-  };
+  }, [userInfo]);
   
-  const fetchFees = async () => {
+  const fetchFees = useCallback(async () => {
     try {
+      if (!userInfo) return;
+      
       const config = {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
@@ -75,7 +95,30 @@ const PaymentCreateScreen = () => {
     } catch (error) {
       console.error('Lỗi khi tải danh sách phí:', error);
     }
-  };
+  }, [userInfo]);
+  
+  // Tải danh sách hộ dân và phí khi component mount
+  useEffect(() => {
+    fetchHouseholds();
+    fetchFees();
+  }, [userInfo, fetchHouseholds, fetchFees]);
+  
+  // Khi feeId thay đổi, cập nhật số tiền
+  useEffect(() => {
+    if (feeId) {
+      const fee = fees.find(f => f._id === feeId);
+      if (fee) {
+        setAmount(fee.amount);
+      }
+    }
+  }, [feeId, fees]);
+  
+  // Nếu đã chọn hộ dân và có thông tin về chủ hộ, điền thông tin người thanh toán
+  useEffect(() => {
+    if (householdId) {
+      fetchHouseholdHead();
+    }
+  }, [householdId, fetchHouseholdHead]);
   
   const validateForm = () => {
     const errors = {};
@@ -176,7 +219,7 @@ const PaymentCreateScreen = () => {
               <option value="">Chọn Hộ Gia Đình</option>
               {households.map((household) => (
                 <option key={household._id} value={household._id}>
-                  {household.householdCode} - {household.apartmentNumber}
+                  {household.apartmentNumber}
                 </option>
               ))}
             </Form.Select>

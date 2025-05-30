@@ -6,7 +6,8 @@ const {
   updatePayment,
   getPaymentsByHousehold,
   getPaymentsByFee,
-  searchPayments
+  searchPayments,
+  getHouseholdFeeStatus
 } = require('../controllers/paymentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -24,6 +25,9 @@ router.route('/search')
 
 router.route('/household/:id')
   .get(getPaymentsByHousehold);
+
+router.route('/household/:id/fee-status')
+  .get(getHouseholdFeeStatus);
 
 router.route('/fee/:id')
   .get(getPaymentsByFee);

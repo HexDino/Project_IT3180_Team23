@@ -23,13 +23,11 @@ const createMassiveTestData = async () => {
     for (let floor = 1; floor <= 10; floor++) {
       for (let unit = 1; unit <= 5; unit++) {
         const apartmentNumber = `${String.fromCharCode(64 + floor)}${unit.toString().padStart(2, '0')}`;
-        const householdCode = `HH${(floor * 5 + unit).toString().padStart(3, '0')}`;
         
         householdsToCreate.push({
-          householdCode: householdCode,
           apartmentNumber: apartmentNumber,
           address: `Căn hộ ${apartmentNumber}, Chung cư BlueMoon, Quận ${Math.floor(Math.random() * 12) + 1}, TP.HCM`,
-          note: `Hộ gia đình ${householdCode} - Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}`,
+          note: `Hộ gia đình ${apartmentNumber} - Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}`,
           active: true
         });
       }
@@ -37,7 +35,7 @@ const createMassiveTestData = async () => {
 
     // Xóa hộ gia đình cũ (trừ 3 hộ đầu tiên)
     await Household.deleteMany({ 
-      householdCode: { $not: { $in: ['HH001', 'HH002', 'HH003'] } } 
+      apartmentNumber: { $not: { $in: ['A101', 'B202', 'C303'] } } 
     });
 
     const households = await Household.insertMany(householdsToCreate);
@@ -83,7 +81,7 @@ const createMassiveTestData = async () => {
 
     // Xóa cư dân cũ (trừ những cư dân của 3 hộ đầu tiên)
     const oldHouseholdIds = (await Household.find({ 
-      householdCode: { $in: ['HH001', 'HH002', 'HH003'] } 
+      apartmentNumber: { $in: ['A101', 'B202', 'C303'] } 
     })).map(h => h._id);
     
     await Resident.deleteMany({ 

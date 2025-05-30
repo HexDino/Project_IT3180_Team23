@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Row, Col, Card, Button, ListGroup, Table, Alert } from 'react-bootstrap';
+import { Row, Col, Card, Button, ListGroup, Table, Alert, Badge } from 'react-bootstrap';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
@@ -12,6 +12,7 @@ const HouseholdDetailScreen = () => {
   
   const [household, setHousehold] = useState(null);
   const [residents, setResidents] = useState([]);
+  const [feeStatus, setFeeStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -19,7 +20,7 @@ const HouseholdDetailScreen = () => {
   
   useEffect(() => {
     fetchHouseholdData();
-  }, [id]);
+  }, [id, userInfo]);
   
   const fetchHouseholdData = async () => {
     try {
@@ -32,14 +33,16 @@ const HouseholdDetailScreen = () => {
         },
       };
       
-      // Make both requests in parallel
-      const [householdResponse, residentsResponse] = await Promise.all([
+      // Make all requests in parallel
+      const [householdResponse, residentsResponse, feeStatusResponse] = await Promise.all([
         axios.get(`/api/households/${id}`, config),
-        axios.get(`/api/households/${id}/residents`, config)
+        axios.get(`/api/households/${id}/residents`, config),
+        axios.get(`/api/payments/household/${id}/fee-status`, config)
       ]);
       
       setHousehold(householdResponse.data);
       setResidents(residentsResponse.data);
+      setFeeStatus(feeStatusResponse.data.feeStatus);
       
     } catch (error) {
       setError(
@@ -54,6 +57,24 @@ const HouseholdDetailScreen = () => {
   
   const handleAddResident = () => {
     navigate(`/residents/create?household=${household._id}`);
+  };
+
+  const handleCreatePayment = (feeId) => {
+    navigate(`/payments/create?household=${household._id}&fee=${feeId}`);
+  };
+
+  // Helper function to get badge variant based on status
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case 'paid':
+        return <Badge bg="success">Đã thanh toán</Badge>;
+      case 'pending':
+        return <Badge bg="warning">Chưa thanh toán</Badge>;
+      case 'overdue':
+        return <Badge bg="danger">Quá hạn</Badge>;
+      default:
+        return <Badge bg="secondary">Không áp dụng</Badge>;
+    }
   };
   
   return (
@@ -76,12 +97,6 @@ const HouseholdDetailScreen = () => {
                 </Card.Header>
                 <Card.Body>
                   <ListGroup variant="flush">
-                    <ListGroup.Item>
-                      <Row>
-                        <Col md={5}><strong>Mã hộ:</strong></Col>
-                        <Col>{household.householdCode}</Col>
-                      </Row>
-                    </ListGroup.Item>
                     <ListGroup.Item>
                       <Row>
                         <Col md={5}><strong>Căn hộ:</strong></Col>
@@ -205,13 +220,67 @@ const HouseholdDetailScreen = () => {
           <Row>
             <Col>
               <Card className="mb-4">
-                <Card.Header>
-                  <h4>Lịch sử Thanh toán</h4>
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                  <h4>Trạng thái Thanh toán</h4>
+                  <Link to={`/payments?household=${household._id}`} className="btn btn-info btn-sm">
+                    <i className="fas fa-history"></i> Lịch sử thanh toán
+                  </Link>
                 </Card.Header>
                 <Card.Body>
-                  <Link to={`/payments?household=${household._id}`} className="btn btn-primary">
-                    Xem Thanh toán
-                  </Link>
+                  {feeStatus.length === 0 ? (
+                    <Alert variant="info">
+                      Không có khoản phí nào được áp dụng cho hộ gia đình này.
+                    </Alert>
+                  ) : (
+                    <Table striped bordered hover responsive>
+                      <thead>
+                        <tr>
+                          <th>Loại phí</th>
+                          <th>Số tiền</th>
+                          <th>Tháng hiện tại</th>
+                          <th>Tháng trước</th>
+                          <th>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {feeStatus.map((fee) => (
+                          <tr key={fee._id}>
+                            <td>{fee.name}</td>
+                            <td>{fee.amount.toLocaleString('vi-VN')} VND</td>
+                            <td>{getStatusBadge(fee.currentMonthStatus)}</td>
+                            <td>
+                              {getStatusBadge(fee.lastMonthStatus)}
+                              {fee.lastMonthStatus === 'overdue' && (
+                                <span className="ms-2 text-danger">
+                                  <i className="fas fa-exclamation-triangle"></i>
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {fee.currentMonthStatus === 'pending' && (
+                                <Button 
+                                  variant="success" 
+                                  size="sm"
+                                  onClick={() => handleCreatePayment(fee._id)}
+                                >
+                                  <i className="fas fa-money-bill"></i> Thanh toán
+                                </Button>
+                              )}
+                              {fee.lastMonthStatus === 'overdue' && fee.currentMonthStatus === 'paid' && (
+                                <Button 
+                                  variant="warning" 
+                                  size="sm"
+                                  onClick={() => handleCreatePayment(fee._id)}
+                                >
+                                  <i className="fas fa-exclamation-circle"></i> Thanh toán nợ
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
                 </Card.Body>
               </Card>
             </Col>

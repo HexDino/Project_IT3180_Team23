@@ -1,15 +1,10 @@
 const mongoose = require('mongoose');
 
 const householdSchema = new mongoose.Schema({
-  householdCode: {
-    type: String,
-    required: [true, 'Household code is required'],
-    unique: true,
-    trim: true
-  },
   apartmentNumber: {
     type: String,
     required: [true, 'Apartment number is required'],
+    unique: true,
     trim: true
   },
   address: {

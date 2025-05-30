@@ -10,7 +10,6 @@ const PaymentSearchScreen = () => {
   const { userInfo } = useContext(AuthContext);
   
   // Search form states
-  const [householdCode, setHouseholdCode] = useState('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [feeName, setFeeName] = useState('');
   const [feeType, setFeeType] = useState('');
@@ -41,7 +40,6 @@ const PaymentSearchScreen = () => {
       
       // Build query params
       const params = new URLSearchParams();
-      if (householdCode) params.append('householdCode', householdCode);
       if (apartmentNumber) params.append('apartmentNumber', apartmentNumber);
       if (feeName) params.append('feeName', feeName);
       if (feeType) params.append('feeType', feeType);
@@ -67,7 +65,6 @@ const PaymentSearchScreen = () => {
   };
   
   const clearForm = () => {
-    setHouseholdCode('');
     setApartmentNumber('');
     setFeeName('');
     setFeeType('');
@@ -107,19 +104,7 @@ const PaymentSearchScreen = () => {
         <Card.Body>
           <Form onSubmit={searchPayments}>
             <Row>
-              <Col md={4}>
-                <Form.Group controlId="householdCode" className="mb-3">
-                  <Form.Label>Mã Hộ Gia Đình</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Nhập mã hộ gia đình"
-                    value={householdCode}
-                    onChange={(e) => setHouseholdCode(e.target.value)}
-                  />
-                </Form.Group>
-              </Col>
-              
-              <Col md={4}>
+              <Col md={6}>
                 <Form.Group controlId="apartmentNumber" className="mb-3">
                   <Form.Label>Số Căn Hộ</Form.Label>
                   <Form.Control
@@ -131,7 +116,7 @@ const PaymentSearchScreen = () => {
                 </Form.Group>
               </Col>
               
-              <Col md={4}>
+              <Col md={6}>
                 <Form.Group controlId="payerName" className="mb-3">
                   <Form.Label>Tên Người Nộp</Form.Label>
                   <Form.Control

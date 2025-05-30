@@ -67,46 +67,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register user
-  const register = async (fullName, username, password, email = '', phone = '') => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      await axios.post(
-        '/api/users',
-        { 
-          username,
-          password,
-          fullName,
-          email,
-          phone,
-          role: 'accountant' 
-        },
-        config
-      );
-
-      setLoading(false);
-      return { success: true };
-    } catch (error) {
-      setLoading(false);
-      const message = error.response && error.response.data.message
-          ? error.response.data.message
-          : 'Registration failed';
-      setError(message);
-      return {
-        success: false,
-        message,
-      };
-    }
-  };
-
   // Logout user
   const logout = () => {
     localStorage.removeItem('userInfo');
@@ -126,7 +86,6 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         login,
-        register,
         logout,
         clearError,
         isAuthenticated: !!userInfo,
