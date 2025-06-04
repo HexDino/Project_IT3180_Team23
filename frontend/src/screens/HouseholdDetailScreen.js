@@ -59,8 +59,8 @@ const HouseholdDetailScreen = () => {
     navigate(`/residents/create?household=${household._id}`);
   };
 
-  const handleCreatePayment = (feeId) => {
-    navigate(`/payments/create?household=${household._id}&fee=${feeId}`);
+  const handleCreatePayment = (feeId, isDebt = false) => {
+    navigate(`/payments/create?household=${household._id}&fee=${feeId}&isDebt=${isDebt}`);
   };
 
   // Helper function to get badge variant based on status
@@ -270,7 +270,7 @@ const HouseholdDetailScreen = () => {
                                 <Button 
                                   variant="warning" 
                                   size="sm"
-                                  onClick={() => handleCreatePayment(fee._id)}
+                                  onClick={() => handleCreatePayment(fee._id, true)}
                                 >
                                   <i className="fas fa-exclamation-circle"></i> Thanh toán nợ
                                 </Button>

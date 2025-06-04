@@ -44,7 +44,8 @@ const createPayment = asyncHandler(async (req, res) => {
     payerId,
     payerPhone,
     receiptNumber,
-    note
+    note,
+    period
   } = req.body;
   
   // Check if fee exists
@@ -61,15 +62,28 @@ const createPayment = asyncHandler(async (req, res) => {
     throw new Error('Household not found');
   }
   
-  // Check if payment already exists for this fee and household
+  // Determine the period if not provided (default to current month)
+  let paymentPeriod = period;
+  if (!paymentPeriod) {
+    const paymentDate = new Date();
+    paymentPeriod = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), 1);
+  } else if (typeof paymentPeriod === 'string') {
+    paymentPeriod = new Date(paymentPeriod);
+  }
+  
+  // Check if payment already exists for this fee, household and period
   const paymentExists = await Payment.findOne({ 
     fee, 
-    household
+    household,
+    period: {
+      $gte: new Date(paymentPeriod.getFullYear(), paymentPeriod.getMonth(), 1),
+      $lt: new Date(paymentPeriod.getFullYear(), paymentPeriod.getMonth() + 1, 1)
+    }
   });
   
   if (paymentExists) {
     res.status(400);
-    throw new Error('A payment for this fee already exists for this household');
+    throw new Error('A payment for this fee already exists for this household in the specified period');
   }
   
   const payment = await Payment.create({
@@ -82,7 +96,8 @@ const createPayment = asyncHandler(async (req, res) => {
     payerPhone,
     receiptNumber,
     collector: req.user._id, // User who created the payment
-    note
+    note,
+    period: paymentPeriod
   });
   
   // Populate the new payment with fee and household details
@@ -253,18 +268,26 @@ const getHouseholdFeeStatus = asyncHandler(async (req, res) => {
   
   // Kết quả sẽ chứa trạng thái cho từng loại phí
   const feeStatus = activeFees.map(fee => {
-    // Tìm khoản thanh toán cho phí này trong tháng hiện tại
+    // Tìm khoản thanh toán cho phí này trong tháng hiện tại (ưu tiên sử dụng period)
     const currentMonthPayment = householdPayments.find(payment => 
       payment.fee._id.toString() === fee._id.toString() && 
-      payment.paymentDate >= firstDayCurrentMonth &&
-      payment.paymentDate <= lastDayCurrentMonth
+      ((payment.period && 
+        payment.period >= firstDayCurrentMonth &&
+        payment.period <= lastDayCurrentMonth) ||
+       (!payment.period &&
+        payment.paymentDate >= firstDayCurrentMonth &&
+        payment.paymentDate <= lastDayCurrentMonth))
     );
     
-    // Tìm khoản thanh toán cho phí này trong tháng trước
+    // Tìm khoản thanh toán cho phí này trong tháng trước (ưu tiên sử dụng period)
     const lastMonthPayment = householdPayments.find(payment => 
       payment.fee._id.toString() === fee._id.toString() && 
-      payment.paymentDate >= firstDayLastMonth &&
-      payment.paymentDate <= lastDayLastMonth
+      ((payment.period && 
+        payment.period >= firstDayLastMonth &&
+        payment.period <= lastDayLastMonth) ||
+       (!payment.period &&
+        payment.paymentDate >= firstDayLastMonth &&
+        payment.paymentDate <= lastDayLastMonth))
     );
     
     // Kiểm tra có khoản nào quá hạn không

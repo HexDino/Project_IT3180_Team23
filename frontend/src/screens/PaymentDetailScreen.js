@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, ListGroup, Card, Button, Container, Badge } from 'react-bootstrap';
+import { Row, Col, ListGroup, Badge, Container } from 'react-bootstrap';
 import axios from 'axios';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
@@ -15,9 +15,6 @@ const PaymentDetailScreen = () => {
   const [error, setError] = useState('');
   
   const { userInfo } = useContext(AuthContext);
-  
-  // Check if user can edit (admin or accountant)
-  const canEdit = userInfo && (userInfo.role === 'admin' || userInfo.role === 'accountant');
   
   useEffect(() => {
     const fetchPayment = async () => {
@@ -61,7 +58,7 @@ const PaymentDetailScreen = () => {
         <>
           <h1>Chi tiết thanh toán</h1>
           <Row>
-            <Col md={8}>
+            <Col md={12}>
               <ListGroup variant="flush">
                 <ListGroup.Item>
                   <h2>Thông tin cơ bản</h2>
@@ -129,26 +126,6 @@ const PaymentDetailScreen = () => {
                   </Row>
                 </ListGroup.Item>
               </ListGroup>
-            </Col>
-            <Col md={4}>
-              <Card>
-                <ListGroup variant="flush">
-                  <ListGroup.Item>
-                    <h2>Thao tác</h2>
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    {canEdit && (
-                      <Button
-                        type="button"
-                        className="btn btn-block"
-                        onClick={() => navigate(`/payments/${payment._id}/edit`)}
-                      >
-                        Chỉnh sửa
-                      </Button>
-                    )}
-                  </ListGroup.Item>
-                </ListGroup>
-              </Card>
             </Col>
           </Row>
         </>

@@ -17,10 +17,13 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/bluemoon_ap
       // Bước 1: Kiểm tra và xóa chỉ mục householdCode nếu tồn tại
       await fixHouseholdIndex();
       
-      // Bước 2: Tạo người dùng admin nếu chưa có
+      // Bước 2: Cập nhật mô hình thanh toán để hỗ trợ trường period
+      await updatePaymentModel();
+      
+      // Bước 3: Tạo người dùng admin nếu chưa có
       await createAdminUser();
       
-      // Bước 3: Tạo dữ liệu mẫu
+      // Bước 4: Tạo dữ liệu mẫu
       await createMassiveTestData();
       
       console.log('\n✅ Hoàn thành quá trình thiết lập dữ liệu!');
@@ -73,6 +76,73 @@ async function fixHouseholdIndex() {
     }
   } catch (error) {
     console.error('❌ Lỗi khi kiểm tra/xóa chỉ mục:', error);
+  }
+}
+
+// Hàm cập nhật mô hình thanh toán để hỗ trợ trường period
+async function updatePaymentModel() {
+  console.log('\n🔄 Đang cập nhật mô hình thanh toán...');
+  
+  try {
+    // Lấy collection payments
+    const db = mongoose.connection.db;
+    const collections = await db.listCollections({ name: 'payments' }).toArray();
+    
+    if (collections.length > 0) {
+      console.log('🔍 Đang kiểm tra và cập nhật chỉ mục cho collection payments...');
+      
+      // Kiểm tra các chỉ mục hiện có
+      const indexes = await db.collection('payments').indexes();
+      
+      // Tìm chỉ mục cũ (fee_household)
+      const oldIndex = indexes.find(index => 
+        index.name === 'fee_1_household_1' || 
+        (index.key && index.key.fee === 1 && index.key.household === 1 && !index.key.period)
+      );
+      
+      if (oldIndex) {
+        console.log('🗑️ Tìm thấy chỉ mục cũ fee_household, đang xóa...');
+        await db.collection('payments').dropIndex(oldIndex.name);
+        console.log('✅ Đã xóa chỉ mục cũ thành công!');
+      }
+      
+      // Tạo chỉ mục mới bao gồm trường period
+      console.log('🔧 Đang tạo chỉ mục mới fee_household_period...');
+      await db.collection('payments').createIndex(
+        { fee: 1, household: 1, period: 1 }, 
+        { unique: true }
+      );
+      console.log('✅ Đã tạo chỉ mục mới thành công!');
+      
+      // Cập nhật các bản ghi hiện có để thêm trường period nếu chưa có
+      console.log('🔄 Đang cập nhật các bản ghi thanh toán hiện có...');
+      const result = await db.collection('payments').updateMany(
+        { period: { $exists: false } },
+        [{ 
+          $set: { 
+            period: { 
+              $cond: {
+                if: { $eq: ["$paymentDate", null] },
+                then: null,
+                else: { 
+                  $dateFromParts: { 
+                    year: { $year: "$paymentDate" }, 
+                    month: { $month: "$paymentDate" }, 
+                    day: 1 
+                  } 
+                }
+              }
+            } 
+          } 
+        }]
+      );
+      
+      console.log(`✅ Đã cập nhật ${result.modifiedCount} bản ghi thanh toán với trường period`);
+    } else {
+      console.log('ℹ️ Collection payments chưa tồn tại, bỏ qua bước này.');
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi cập nhật mô hình thanh toán:', error);
   }
 }
 
@@ -236,10 +306,23 @@ async function createMassiveTestData() {
       
       console.log(`📅 Tạo thanh toán cho tháng ${paymentMonth.getMonth() + 1}/${paymentMonth.getFullYear()}`);
       
-      // 80-95% hộ gia đình thanh toán mỗi tháng
+      // Tỷ lệ thanh toán khác nhau cho từng tháng
+      let paymentRate;
+      if (monthOffset === 1) {
+        // Tháng 5 (tháng trước): chỉ 50-60% hộ gia đình thanh toán để tạo nhiều khoản nợ
+        paymentRate = 0.5 + Math.random() * 0.1;
+      } else if (monthOffset === 0) {
+        // Tháng 6 (tháng hiện tại): 70-80% hộ gia đình thanh toán
+        paymentRate = 0.7 + Math.random() * 0.1;
+      } else {
+        // Các tháng trước đó: 80-95% hộ gia đình thanh toán
+        paymentRate = 0.8 + Math.random() * 0.15;
+      }
+      
+      // Chọn ngẫu nhiên hộ gia đình thanh toán theo tỷ lệ
       const payingHouseholds = allHouseholds
         .sort(() => 0.5 - Math.random())
-        .slice(0, Math.floor(allHouseholds.length * (0.8 + Math.random() * 0.15)));
+        .slice(0, Math.floor(allHouseholds.length * paymentRate));
       
       for (const household of payingHouseholds) {
         // Mỗi hộ thanh toán 3-7 loại phí ngẫu nhiên
@@ -265,27 +348,87 @@ async function createMassiveTestData() {
             );
           }
 
+          // Tạo period (ngày 1 của tháng)
+          const period = new Date(
+            paymentMonth.getFullYear(),
+            paymentMonth.getMonth(),
+            1
+          );
+
           // Tạo số tiền với biến động ±30%
           const baseAmount = fee.amount || 500000;
           const variance = 0.7 + Math.random() * 0.6; // 0.7 - 1.3
           const amount = Math.floor((baseAmount * variance) / 10000) * 10000;
 
           // Tạo status cho thanh toán
-          const status = Math.random() < 0.9 ? 'paid' : 'pending';
-          
-          // Nếu là tháng 6, không tạo thanh toán quá hạn
-          const finalStatus = (monthOffset === 0 && paymentMonth.getMonth() === 5) ? 
-            (Math.random() < 0.95 ? 'paid' : 'pending') : status;
+          let status;
+          if (monthOffset === 1) {
+            // Tháng 5 (tháng trước): 90% đã thanh toán, 10% quá hạn
+            status = Math.random() < 0.9 ? 'paid' : 'overdue';
+          } else if (monthOffset === 0) {
+            // Tháng 6 (tháng hiện tại): 90% đã thanh toán, 10% đang chờ
+            status = Math.random() < 0.9 ? 'paid' : 'pending';
+          } else {
+            // Các tháng trước: 90% đã thanh toán, 10% quá hạn
+            status = Math.random() < 0.9 ? 'paid' : 'overdue';
+          }
 
           paymentsToCreate.push({
             household: household._id,
             fee: fee._id,
             amount: amount,
             paymentDate: paymentDate,
+            period: period,
             method: ['cash', 'bank_transfer', 'card', 'other'][Math.floor(Math.random() * 4)],
-            status: finalStatus,
-            note: `Thanh toán ${fee.name} tháng ${paymentMonth.getMonth() + 1}/${paymentMonth.getFullYear()}`
+            status: status,
+            note: ''
           });
+        }
+      }
+
+      // Đối với các hộ gia đình không nằm trong danh sách thanh toán, tạo các khoản nợ
+      if (monthOffset === 1) { // Chỉ tạo nợ cho tháng 5 (tháng trước)
+        const nonPayingHouseholds = allHouseholds.filter(
+          h => !payingHouseholds.some(ph => ph._id.toString() === h._id.toString())
+        );
+        
+        // Đảm bảo có ít nhất 20% hộ gia đình có nợ phí quản lý hàng tháng
+        const managementFee = fees.find(fee => fee.name === 'Phí quản lý hàng tháng' || fee.feeCode === 'PHI001');
+        
+        if (managementFee) {
+          const overdueHouseholds = nonPayingHouseholds.slice(0, Math.max(5, Math.floor(allHouseholds.length * 0.2)));
+          
+          for (const household of overdueHouseholds) {
+            // Tạo khoản nợ phí quản lý
+            paymentsToCreate.push({
+              household: household._id,
+              fee: managementFee._id,
+              amount: managementFee.amount,
+              paymentDate: null, // Không có ngày thanh toán vì chưa thanh toán
+              period: new Date(new Date().getFullYear(), 4, 1), // Tháng 5 (index 4)
+              method: null,
+              status: 'overdue', // Quá hạn
+              note: `Phí quản lý hàng tháng quá hạn - Tháng 5/${new Date().getFullYear()}`
+            });
+            
+            // Thêm 1-2 khoản nợ khác
+            const otherFees = fees.filter(f => f._id.toString() !== managementFee._id.toString())
+              .sort(() => 0.5 - Math.random())
+              .slice(0, 1 + Math.floor(Math.random() * 2));
+            
+            for (const fee of otherFees) {
+              paymentsToCreate.push({
+                household: household._id,
+                fee: fee._id,
+                amount: fee.amount,
+                paymentDate: null,
+                period: new Date(new Date().getFullYear(), 4, 1), // Tháng 5 (index 4)
+                method: null,
+                status: 'overdue',
+                note: `${fee.name} quá hạn - Tháng 5/${new Date().getFullYear()}`
+              });
+            }
+          }
         }
       }
     }
@@ -302,6 +445,7 @@ async function createMassiveTestData() {
         const existingPayment = paymentsToCreate.find(p => 
           p.household.toString() === household._id.toString() && 
           p.fee.toString() === managementFee._id.toString() &&
+          p.paymentDate && // Đảm bảo có ngày thanh toán
           p.paymentDate.getMonth() === 5 && // Tháng 6 (index 5)
           p.paymentDate.getFullYear() === new Date().getFullYear()
         );
@@ -313,10 +457,108 @@ async function createMassiveTestData() {
             fee: managementFee._id,
             amount: managementFee.amount,
             paymentDate: new Date(new Date().getFullYear(), 5, Math.floor(Math.random() * 6) + 1), // Ngày 1-6 tháng 6
+            period: new Date(new Date().getFullYear(), 5, 1),
             method: ['cash', 'bank_transfer'][Math.floor(Math.random() * 2)],
             status: 'paid', // Chỉ có trạng thái đã thanh toán hoặc đang chờ
             note: `Thanh toán phí quản lý hàng tháng - Tháng 6/${new Date().getFullYear()}`
           });
+        }
+      }
+    }
+    
+    // Tạo tình huống đặc biệt: Hộ gia đình đã thanh toán tháng 6 nhưng còn nợ tháng 5
+    // Đây là tình huống cần thiết để test chức năng "Thanh toán nợ"
+    console.log('💰 Tạo tình huống đặc biệt: Hộ đã thanh toán tháng 6 nhưng còn nợ tháng 5...');
+    
+    // Chọn 30% hộ gia đình để tạo tình huống đặc biệt này
+    const specialCaseHouseholds = allHouseholds
+      .sort(() => 0.5 - Math.random())
+      .slice(0, Math.floor(allHouseholds.length * 0.3));
+    
+    for (const household of specialCaseHouseholds) {
+      // Đảm bảo hộ này đã thanh toán phí quản lý tháng 6
+      const june6Payment = paymentsToCreate.find(p => 
+        p.household.toString() === household._id.toString() && 
+        p.fee.toString() === managementFee._id.toString() &&
+        p.paymentDate && 
+        p.paymentDate.getMonth() === 5 && // Tháng 6 (index 5)
+        p.paymentDate.getFullYear() === new Date().getFullYear() &&
+        p.status === 'paid'
+      );
+      
+      if (june6Payment) {
+        // Kiểm tra xem đã có khoản nợ tháng 5 chưa
+        const may5Payment = paymentsToCreate.find(p => 
+          p.household.toString() === household._id.toString() && 
+          p.fee.toString() === managementFee._id.toString() &&
+          ((p.paymentDate && p.paymentDate.getMonth() === 4) || // Tháng 5 (index 4)
+           (p.note && p.note.includes('Tháng 5/')))
+        );
+        
+        // Nếu chưa có khoản nợ tháng 5, tạo mới
+        if (!may5Payment) {
+          paymentsToCreate.push({
+            household: household._id,
+            fee: managementFee._id,
+            amount: managementFee.amount,
+            paymentDate: null, // Không có ngày thanh toán vì chưa thanh toán
+            period: new Date(new Date().getFullYear(), 4, 1), // Tháng 5 (index 4)
+            method: null,
+            status: 'overdue', // Quá hạn
+            note: `Phí quản lý hàng tháng quá hạn - Tháng 5/${new Date().getFullYear()}`
+          });
+          
+          console.log(`✅ Đã tạo khoản nợ tháng 5 cho hộ ${household.apartmentNumber}`);
+        }
+        // Nếu đã có khoản thanh toán tháng 5 nhưng không phải quá hạn, chuyển thành quá hạn
+        else if (may5Payment.status !== 'overdue') {
+          may5Payment.status = 'overdue';
+          may5Payment.paymentDate = null;
+          may5Payment.period = new Date(new Date().getFullYear(), 4, 1); // Tháng 5 (index 4)
+          may5Payment.method = null;
+          may5Payment.note = `Phí quản lý hàng tháng quá hạn - Tháng 5/${new Date().getFullYear()}`;
+          
+          console.log(`✅ Đã chuyển khoản thanh toán tháng 5 thành quá hạn cho hộ ${household.apartmentNumber}`);
+        }
+        
+        // Thêm các khoản nợ khác cho tháng 5
+        // Chọn 2-3 loại phí khác để tạo khoản nợ
+        const otherFees = fees.filter(f => f._id.toString() !== managementFee._id.toString())
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 2 + Math.floor(Math.random() * 2)); // 2-3 loại phí
+        
+        for (const fee of otherFees) {
+          // Kiểm tra xem đã có khoản nợ cho loại phí này chưa
+          const existingFeePayment = paymentsToCreate.find(p => 
+            p.household.toString() === household._id.toString() && 
+            p.fee.toString() === fee._id.toString() &&
+            ((p.paymentDate && p.paymentDate.getMonth() === 4) || // Tháng 5 (index 4)
+             (p.note && p.note.includes('Tháng 5/')))
+          );
+          
+          if (!existingFeePayment) {
+            paymentsToCreate.push({
+              household: household._id,
+              fee: fee._id,
+              amount: fee.amount,
+              paymentDate: null,
+              period: new Date(new Date().getFullYear(), 4, 1), // Tháng 5 (index 4)
+              method: null,
+              status: 'overdue',
+              note: `${fee.name} quá hạn - Tháng 5/${new Date().getFullYear()}`
+            });
+            
+            console.log(`✅ Đã tạo khoản nợ ${fee.name} tháng 5 cho hộ ${household.apartmentNumber}`);
+          }
+          else if (existingFeePayment.status !== 'overdue') {
+            existingFeePayment.status = 'overdue';
+            existingFeePayment.paymentDate = null;
+            existingFeePayment.period = new Date(new Date().getFullYear(), 4, 1);
+            existingFeePayment.method = null;
+            existingFeePayment.note = `${fee.name} quá hạn - Tháng 5/${new Date().getFullYear()}`;
+            
+            console.log(`✅ Đã chuyển khoản thanh toán ${fee.name} tháng 5 thành quá hạn cho hộ ${household.apartmentNumber}`);
+          }
         }
       }
     }
@@ -340,6 +582,7 @@ async function createMassiveTestData() {
             fee: fee._id,
             amount: fee.amount,
             paymentDate: new Date(new Date().getFullYear(), 5, Math.floor(Math.random() * 6) + 1), // Ngày 1-6 tháng 6
+            period: new Date(new Date().getFullYear(), 5, 1),
             method: 'cash',
             status: Math.random() < 0.95 ? 'paid' : 'pending', // 95% đã thanh toán, 5% đang chờ
             note: `Thanh toán ${fee.name} - Tháng 6/${new Date().getFullYear()}`
@@ -363,6 +606,7 @@ async function createMassiveTestData() {
             fee: fee._id,
             amount: fee.amount,
             paymentDate: new Date(new Date().getFullYear(), 5, Math.floor(Math.random() * 6) + 1), // Ngày 1-6 tháng 6
+            period: new Date(new Date().getFullYear(), 5, 1),
             method: 'bank_transfer',
             status: Math.random() < 0.9 ? 'paid' : 'pending', // 90% đã thanh toán, 10% đang chờ
             note: `Thanh toán ${fee.name} - Tháng 6/${new Date().getFullYear()}`
@@ -464,6 +708,65 @@ async function createMassiveTestData() {
       console.log(`${feeTypeName}: ${amount.toLocaleString()} VND`);
     }
 
+    // Thống kê các khoản thanh toán quá hạn
+    const overduePayments = await Payment.find({
+      status: 'overdue'
+    }).populate('fee').populate('household');
+    
+    const overdueAmount = overduePayments.reduce((sum, p) => sum + p.amount, 0);
+    
+    console.log('\n📊 THỐNG KÊ CÁC KHOẢN THANH TOÁN QUÁ HẠN:');
+    console.log(`❗ Tổng số khoản quá hạn: ${overduePayments.length}`);
+    console.log(`💵 Tổng giá trị quá hạn: ${overdueAmount.toLocaleString()} VND`);
+    
+    // Thống kê theo loại phí
+    const overdueByFeeType = {};
+    for (const payment of overduePayments) {
+      const feeType = payment.fee.feeType;
+      if (!overdueByFeeType[feeType]) {
+        overdueByFeeType[feeType] = {
+          count: 0,
+          amount: 0
+        };
+      }
+      overdueByFeeType[feeType].count += 1;
+      overdueByFeeType[feeType].amount += payment.amount;
+    }
+    
+    console.log('\n--- Khoản quá hạn theo loại phí ---');
+    for (const [feeType, data] of Object.entries(overdueByFeeType)) {
+      let feeTypeName;
+      switch(feeType) {
+        case 'mandatory': feeTypeName = 'Phí bắt buộc'; break;
+        case 'voluntary': feeTypeName = 'Phí tự nguyện'; break;
+        case 'contribution': feeTypeName = 'Phí đóng góp'; break;
+        case 'parking': feeTypeName = 'Phí gửi xe'; break;
+        case 'utilities': feeTypeName = 'Phí tiện ích'; break;
+        default: feeTypeName = feeType;
+      }
+      console.log(`${feeTypeName}: ${data.count} khoản - ${data.amount.toLocaleString()} VND`);
+    }
+    
+    // Đếm số hộ gia đình có khoản quá hạn
+    const householdsWithOverdue = [...new Set(overduePayments.map(p => p.household._id.toString()))];
+    console.log(`🏠 Số hộ gia đình có khoản quá hạn: ${householdsWithOverdue.length}/${allHouseholds.length} (${Math.round(householdsWithOverdue.length/allHouseholds.length*100)}%)`);
+    
+    // Đếm số hộ gia đình có khoản quá hạn nhưng đã thanh toán tháng hiện tại
+    const householdsWithOverdueAndCurrentPaid = [];
+    for (const householdId of householdsWithOverdue) {
+      const hasCurrentPaid = await Payment.exists({
+        household: householdId,
+        status: 'paid',
+        paymentDate: { $gte: june6Start, $lte: june6End }
+      });
+      
+      if (hasCurrentPaid) {
+        householdsWithOverdueAndCurrentPaid.push(householdId);
+      }
+    }
+    
+    console.log(`🏠 Số hộ gia đình có khoản quá hạn nhưng đã thanh toán tháng hiện tại: ${householdsWithOverdueAndCurrentPaid.length}/${householdsWithOverdue.length} (${Math.round(householdsWithOverdueAndCurrentPaid.length/householdsWithOverdue.length*100)}%)`);
+
   } catch (error) {
     console.error('❌ Lỗi khi tạo dữ liệu:', error);
     throw error;
@@ -530,4 +833,4 @@ async function createFees() {
     console.error('❌ Lỗi khi tạo loại phí:', error);
     throw error;
   }
-} 
+}

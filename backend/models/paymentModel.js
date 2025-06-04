@@ -40,6 +40,10 @@ const paymentSchema = mongoose.Schema(
     },
     note: {
       type: String
+    },
+    period: {
+      type: Date,
+      description: 'The month/year this payment is for (e.g., for debt payments)'
     }
   },
   {
@@ -47,8 +51,8 @@ const paymentSchema = mongoose.Schema(
   }
 );
 
-// Ensure uniqueness of fee-household combination
-paymentSchema.index({ fee: 1, household: 1 }, { unique: true });
+// Ensure uniqueness of fee-household-period combination
+paymentSchema.index({ fee: 1, household: 1, period: 1 }, { unique: true });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 

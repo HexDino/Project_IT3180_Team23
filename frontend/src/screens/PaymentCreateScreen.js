@@ -15,6 +15,7 @@ const PaymentCreateScreen = () => {
   const searchParams = new URLSearchParams(location.search);
   const householdParam = searchParams.get('household');
   const feeParam = searchParams.get('fee');
+  const isDebtPayment = searchParams.get('isDebt') === 'true';
   
   const [households, setHouseholds] = useState([]);
   const [fees, setFees] = useState([]);
@@ -29,6 +30,9 @@ const PaymentCreateScreen = () => {
   const [payerPhone, setPayerPhone] = useState('');
   const [receiptNumber, setReceiptNumber] = useState('');
   const [note, setNote] = useState('');
+  
+  // Period field for debt payments
+  const [period, setPeriod] = useState('');
   
   // States
   const [loading, setLoading] = useState(false);
@@ -120,6 +124,26 @@ const PaymentCreateScreen = () => {
     }
   }, [householdId, fetchHouseholdHead]);
   
+  // Set default period for debt payment
+  useEffect(() => {
+    if (isDebtPayment) {
+      // Set to previous month by default
+      const today = new Date();
+      const lastMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
+      const lastMonthYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
+      const lastMonthDate = new Date(lastMonthYear, lastMonth, 1);
+      setPeriod(lastMonthDate.toISOString().split('T')[0]);
+      
+      // Set default note for debt payment
+      setNote('Thanh toán nợ tháng trước');
+    } else {
+      // Set to current month for regular payments
+      const today = new Date();
+      const currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      setPeriod(currentMonthDate.toISOString().split('T')[0]);
+    }
+  }, [isDebtPayment]);
+  
   const validateForm = () => {
     const errors = {};
     
@@ -127,6 +151,7 @@ const PaymentCreateScreen = () => {
     if (!feeId) errors.feeId = 'Loại phí là bắt buộc';
     if (!amount || amount <= 0) errors.amount = 'Số tiền phải lớn hơn 0';
     if (!paymentDate) errors.paymentDate = 'Ngày thanh toán là bắt buộc';
+    if (!period) errors.period = 'Kỳ thanh toán là bắt buộc';
     
     setValidationErrors(errors);
     
@@ -150,6 +175,13 @@ const PaymentCreateScreen = () => {
         },
       };
       
+      // Ensure period is a proper date string
+      let periodDate = period;
+      if (period && period.length === 7) {
+        // If only month and year are provided (YYYY-MM format)
+        periodDate = `${period}-01`; // Add day to make it a valid date
+      }
+      
       const paymentData = {
         household: householdId,
         fee: feeId,
@@ -159,7 +191,8 @@ const PaymentCreateScreen = () => {
         payerId,
         payerPhone,
         receiptNumber,
-        note
+        note,
+        period: periodDate
       };
       
       await axios.post('/api/payments', paymentData, config);
@@ -276,6 +309,23 @@ const PaymentCreateScreen = () => {
             />
             <Form.Control.Feedback type='invalid'>
               {validationErrors.paymentDate}
+            </Form.Control.Feedback>
+          </Form.Group>
+          
+          <Form.Group controlId='period' className='mb-3'>
+            <Form.Label>{isDebtPayment ? 'Kỳ Thanh Toán (Nợ)' : 'Kỳ Thanh Toán'}</Form.Label>
+            <Form.Control
+              type='month'
+              value={period.substring(0, 7)}
+              onChange={(e) => setPeriod(e.target.value)}
+              isInvalid={!!validationErrors.period}
+              required
+            />
+            <Form.Text className="text-muted">
+              {isDebtPayment ? 'Chọn tháng cần thanh toán nợ' : 'Chọn tháng áp dụng khoản thanh toán này'}
+            </Form.Text>
+            <Form.Control.Feedback type='invalid'>
+              {validationErrors.period}
             </Form.Control.Feedback>
           </Form.Group>
           
