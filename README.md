@@ -102,8 +102,6 @@ JWT_SECRET=your_jwt_secret_here
 ### 6. Tạo dữ liệu mẫu (tùy chọn)
 ```bash
 cd backend
-node createAdminUser.js
-node createTestUsers.js
 node createMassiveTestData.js
 ```
 
@@ -143,7 +141,6 @@ Khi chạy script tạo dữ liệu, hệ thống sẽ có:
 | **Admin** | Toàn quyền hệ thống |
 | **Manager** | Quản lý hộ gia đình, cư dân |
 | **Staff** | Xem thông tin, ghi nhận thanh toán |
-| **Accountant** | Quản lý phí, thanh toán, hoàn tiền |
 
 ## 📱 Giao diện
 
