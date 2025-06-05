@@ -97,7 +97,8 @@ const createPayment = asyncHandler(async (req, res) => {
     receiptNumber,
     collector: req.user._id, // User who created the payment
     note,
-    period: paymentPeriod
+    period: paymentPeriod,
+    status: 'paid' // Automatically set status to paid when creating a payment
   });
   
   // Populate the new payment with fee and household details
